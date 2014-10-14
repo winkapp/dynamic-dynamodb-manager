@@ -1,3 +1,4 @@
 .project
 *.gem
 .idea
+vendor

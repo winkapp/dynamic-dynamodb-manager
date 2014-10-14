@@ -1,4 +1,3 @@
-source 'https://rubygems.org'
-gem 'httparty'
-gem 'netrc'
-gem 'thor'
+source 'http://rubygems.org'
+
+gemspec

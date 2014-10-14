@@ -23,7 +23,7 @@ gem install dynamic-dynamodb-manager-0.0.1.gem
 ```
 
 ```
-manager-cli
+dynamic-dynamodb-manager-cli
 ```
 Note: You may need to run *rbenv rehash* 
 
@@ -43,12 +43,12 @@ Then run bundle install.
 ## Usage
 
 ```
-manager-cli
+dynamic-dynamodb-manager-cli
 ```
 
 Note: If you installed via bundle
 ```
-bundle exec manager-cli
+bundle exec dynamic-dynamodb-manager-cli
 ```
 
 @todo

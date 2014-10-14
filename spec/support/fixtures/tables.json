@@ -1,0 +1,14 @@
+[
+    {
+        "table_name" : "sessions",
+        "rotation_days" : "7",
+        "purge_rotation" : "4",
+        "min_read_capacity" : "200"
+    },
+    {
+        "table_name" : "someothertable",
+        "rotation_days" : "1",
+        "purge_rotation" : "14",
+        "min_read_capacity" : "2000"
+    }
+]
