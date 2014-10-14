@@ -1,5 +1,4 @@
 require_relative "../../spec/spec_helper.rb"
-require 'pp'
 
 describe DynamicDynamoDBManager do
 
@@ -23,10 +22,6 @@ describe DynamicDynamoDBManager do
 
   it 'returns a list of collections' do
     expect(@manager.collections.include?('some-random-collection-one')).to eq(true)
-  end
-
-  it 'returns a list of tables' do
-    pp @manager.list_tables
   end
 
   after do
