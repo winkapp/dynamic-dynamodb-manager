@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Mollom/dynamic-dynamodb-manager.svg?branch=master)](https://travis-ci.org/Mollom/dynamic-dynamodb-manager)
+
 # Dynamic DynamoDB Table Manager
 
 This repository contains a Ruby client library that is primarily used for Mollom to generate new tables on a 
