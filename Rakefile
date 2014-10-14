@@ -8,7 +8,7 @@ task :test do
 end
 
 task :fake_dynamo do
-  sh("fake_dynamo --port 4567")
+  sh("fake_dynamo --port 4567 --db /tmp/"+ENV['USER']+"/db.fdb")
 end
 
 # Setup the necessary gems, specified in the gemspec.
