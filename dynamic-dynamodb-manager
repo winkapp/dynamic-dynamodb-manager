@@ -1,0 +1,19 @@
+Gem::Specification.new do |s|
+  s.name        = 'dynamic-dynamodb-manager'
+  s.version     = '0.0.1'
+  s.date        = '2014-10-14'
+  s.summary     = "Manages tables regarding DynamoDB and generates a new config for Dynamic DynamoDB"
+  s.description = ""
+  s.authors     = ["Nick Veenhof"]
+  s.email       = 'nick.veenhof@acquia.com'
+  s.files       = ["lib/manager.rb"]
+  s.homepage    = 'https://github.com/acquia/dynamic-dynamodb-manager'
+  s.license     = 'GPLv2'
+
+  s.executables << 'manager-cli'
+
+  s.add_runtime_dependency 'httparty'
+  s.add_runtime_dependency 'netrc'
+  s.add_runtime_dependency 'thor'
+
+end
