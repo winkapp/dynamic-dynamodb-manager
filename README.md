@@ -8,13 +8,6 @@ weekly or daily scheme using a predefined pattern. It also includes a command li
 
 ## Installation
 
-## Request creds from @todo
-
-Append the following lines to your .netrc file.
-```
-@todo
-```
-
 In each environment you are running this GEM you will need the following environment variables:
 
     DYNAMODB_ENDPOINT=localhost
