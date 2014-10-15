@@ -77,6 +77,8 @@ bundle exec dynamic-dynamodb-manager-cli
 
 The following example is what this tool expects in order to create the tables automatically. It will read it (see API_TABLE_RESOURCE env variable) and use this to create tables and or write the appropriate config files.
 
+RotationScheme accepts the following values: daily, weekly, monthly.
+
     [
         {
             "TableName" : "MyTable",
