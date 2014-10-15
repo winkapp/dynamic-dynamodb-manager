@@ -7,6 +7,10 @@ task :test do
   sh("bundle exec rspec spec/")
 end
 
+task :write_config do
+
+end
+
 task :fake_dynamo do
   sh("fake_dynamo --port 4567 --db /tmp/"+ENV['USER']+"/db.fdb")
 end
