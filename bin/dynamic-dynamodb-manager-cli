@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'bundler'
+require 'dynamic_dynamodb_manager'
+
+class DynamicDynamoDBCLI < Thor
+
+  desc 'write_config', 'Writes the dynamic db config based on the API endpoint that is found in the variables'
+  def write_config(path)
+    @manager = DynamicDynamoDBManager.new
+    @manager.write_dynamic_dynamodb_config(path)
+    puts "wrote the Dynamic DynamoDB config file to #{path}"
+  end
+
+  private
+
+end
+
+DynamicDynamoDBCLI.start(ARGV)

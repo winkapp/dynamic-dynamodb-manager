@@ -1,5 +1,3 @@
-$: << File.join(File.dirname(__FILE__), '/../lib' )
-
 require 'rubygems'
 require 'bundler'
 require 'rspec'
@@ -7,7 +5,7 @@ require 'rack/test'
 require 'webmock/rspec'
 require 'open-uri'
 require 'json'
-require 'dynamic-dynamodb-manager'
+require File.join(File.dirname(File.dirname(__FILE__)), "lib", "dynamic_dynamodb_manager.rb")
 
 ENV['RACK_ENV'] ||= 'test'
 

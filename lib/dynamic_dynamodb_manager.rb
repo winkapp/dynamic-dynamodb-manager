@@ -1,7 +1,6 @@
 require 'open-uri'
 require 'aws-sdk'
 require 'json'
-require 'dynamic_dynamodb_manager/dynamic_dynamodb_manager'
 require 'erb'
 require 'dotenv'
 require 'pp'
