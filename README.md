@@ -6,6 +6,10 @@ This repository contains a Ruby client library that is primarily used for Mollom
 weekly or daily scheme using a predefined pattern. It also includes a command line tool that can be run via any
  *nix-like terminal.
 
+It extends https://github.com/sebdah/dynamic-dynamodb by dynamically writing a config file that can be read by
+dynamic-dynamodb service.
+Logically, dynamic-dynamodb is also required.
+
 ## Installation
 
 In each environment you are running this GEM you will need the following environment variables:
@@ -65,9 +69,10 @@ This command will also write the Dynamic DynamoDB configuration file. There is a
 Note: By default it does NOT purge the old tables. It will create new ones.
 
 ```
-dynamic-dynamodb-manager-cli rotate '/tmp/testing.conf' --deletion
+dynamic-dynamodb-manager-cli rotate '/etc/dynamic-dynamodb/dynamic-dynamodb.conf' --no-deletion && service dynamic-dynamodb restart
 ```
 Use above command when you are sure you can afford deletion of tables.
+This will also restart the dynamic dynamodb service you have installed.
 
 ## Use environment variables as your friend
 
