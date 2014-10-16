@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'json'
   s.add_dependency 'dotenv'
   s.add_dependency 'bugsnag'
+  s.add_dependency 'io-console'
   s.add_development_dependency 'rack-test'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'webmock'

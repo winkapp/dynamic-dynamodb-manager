@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 require 'thor'
 require 'bundler'
-require File.join(File.dirname(File.dirname(__FILE__)), "../lib", "dynamic_dynamodb_manager.rb")
+
+cur_dir  = File.dirname(__FILE__)
+template = File.read(cur_dir+"/../lib/dynamic_dynamodb_manager.rb")
 
 class DynamicDynamoDBCLI < Thor
 
