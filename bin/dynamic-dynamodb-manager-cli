@@ -3,7 +3,7 @@ require 'thor'
 require 'bundler'
 
 cur_dir  = File.dirname(__FILE__)
-template = File.read(cur_dir+"/../lib/dynamic_dynamodb_manager.rb")
+require cur_dir+"/../lib/dynamic_dynamodb_manager.rb"
 
 class DynamicDynamoDBCLI < Thor
 
@@ -24,8 +24,6 @@ class DynamicDynamoDBCLI < Thor
       @manager.write_dynamic_dynamodb_config(path)
       puts "wrote the Dynamic DynamoDB config file to #{path}"
     end
-
-  private
 
 end
 
