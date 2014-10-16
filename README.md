@@ -93,8 +93,10 @@ The Gem supports BUGSNAG. The only thing you need to do is to add your BUGSNAG k
 and it will help you figure out where it fails and if it fails.
     
 ```
-API_TABLE_RESOURCE=/tmp/tables.json dynamic-dynamodb-manager-cli
+API_TABLE_RESOURCE=/tmp/tables.json dynamic-dynamodb-manager-cli rotate '/tmp/testing.conf' --deletion
 ```
+This is an example on how you could use this tool with multiple variations. We use this with CloudFormation where we
+can setup Environment Variables per Stack we spin up.
 
 Note: If you installed via bundle
 ```
