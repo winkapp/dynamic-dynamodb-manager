@@ -2,7 +2,7 @@
     {
         "TableName" : "Sessions",
         "RotationScheme" : "daily",
-        "PurgeRotation" : "4",
+        "PurgeRotation" : "2",
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -34,6 +34,37 @@
     {
         "TableName" : "HttpHeaders",
         "RotationScheme" : "weekly",
+        "PurgeRotation" : "2",
+        "Properties" : {
+            "AttributeDefinitions" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "AttributeType" : "N"
+                }
+            ],
+            "KeySchema" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "KeyType" : "HASH"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "KeyType" : "RANGE"
+                }
+            ],
+            "ProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "5"
+            }
+        }
+    },
+    {
+        "TableName" : "winnow",
+        "RotationScheme" : "monthly",
         "PurgeRotation" : "4",
         "Properties" : {
             "AttributeDefinitions" : [

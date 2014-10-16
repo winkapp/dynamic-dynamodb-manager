@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'thor'
 require 'bundler'
-require 'dynamic_dynamodb_manager'
+require File.join(File.dirname(File.dirname(__FILE__)), "../lib", "dynamic_dynamodb_manager.rb")
 
 class DynamicDynamoDBCLI < Thor
 
@@ -11,6 +11,22 @@ class DynamicDynamoDBCLI < Thor
     @manager.write_dynamic_dynamodb_config(path)
     puts "wrote the Dynamic DynamoDB config file to #{path}"
   end
+
+  desc 'rotate', 'Makes sure all tables exist in DynamoDB and drops those that are no longer required based on the rotation schemes'
+  option :skipdeletion, :type => :boolean
+    def rotate()
+      @manager = DynamicDynamoDBManager.new
+      # create all new tables
+      puts "Creating required tables"
+      @manager.create_dynamodb_tables
+      unless options[:skipdeletion]
+        # remove all old tables
+        puts "Removing tables which are no longer needed according to the rotation scheme"
+        @manager.cleanup_tables
+      else
+        puts "Not deleting any table because you told me to skip deletions..."
+      end
+    end
 
   private
 
