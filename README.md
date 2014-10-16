@@ -55,17 +55,12 @@ dynamic-dynamodb-manager-cli
 ```
 This will give you an overview of the commands
 
-
-```
-dynamic-dynamodb-manager-cli write_config '/tmp/testing.conf'
-```
-This command will take your API and consume it to write the Dynamic DynamoDB configuration file. There is an ERB that we will update to allow more options. For now, this is sufficient to what we need. 
-
 ```
 dynamic-dynamodb-manager-cli rotate '/tmp/testing.conf'
 ```
 This command will take the API resource, consume it and make sure that the tables in your API resource exist. If they do not exist it will create it. It will expand the list of tables to create based on the rotation scheme. The tables that do not exist in the rotation scheme will be dropped. 
 Add the option --no-table-drop to the command line to not delete any tables.
+This command will also write the Dynamic DynamoDB configuration file. There is an ERB that we will update to allow more options. For now, this is sufficient to what we need. 
 
 
 Note: If you installed via bundle
