@@ -64,8 +64,13 @@ class DynamicDynamoDBManager
 
   def get_all_tables()
     tables = Array.new
-    tables_json = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
-    api_tables = JSON.load(tables_json)
+    begin
+      tables_json = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
+      api_tables = JSON.load(tables_json)
+    rescue
+      raise "JSON file #{ENV['API_TABLE_RESOURCE']} could not properly be read. Please make sure your source is accurate."
+    end
+
 
     # @todo Make this more error-proof
     api_tables.each do | table|
