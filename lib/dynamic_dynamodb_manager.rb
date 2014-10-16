@@ -169,7 +169,11 @@ class DynamicDynamoDBManager
       # Do not create tables that already exist
       unless collections.include?(table_name)
         puts "Creating #{table_name}."
-        dynamo_client.create_table(new_table_params)
+        begin
+          dynamo_client.create_table(new_table_params)
+        rescue
+          pp error.backtrace
+        end
       end
     end
   end
