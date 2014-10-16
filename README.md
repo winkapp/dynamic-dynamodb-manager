@@ -24,7 +24,7 @@ Without these environment variables, it will not be able to create your tables a
 ## Install cli tool
 
 ```
-git clone git@github.com:acquia/dynamic-dynamodb-manager.git
+git clone https://github.com/Mollom/dynamic-dynamodb-manager.git
 cd dynamic-dynamodb-manager
 gem build dynamic-dynamodb-manager.gemspec
 gem install dynamic-dynamodb-manager-0.0.1.gem

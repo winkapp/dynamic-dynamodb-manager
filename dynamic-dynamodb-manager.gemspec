@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.executables << 'dynamic-dynamodb-manager-cli'
   s.require_path = 'lib'
   s.files = Dir.glob("{lib,spec}/**/*")
-  s.required_ruby_version = '>= 2.1.2'
+  s.required_ruby_version = '>= 2.0.0'
 
   s.add_dependency 'aws-sdk'
   s.add_dependency 'bundler'
