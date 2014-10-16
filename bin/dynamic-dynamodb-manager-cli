@@ -6,13 +6,13 @@ require File.join(File.dirname(File.dirname(__FILE__)), "../lib", "dynamic_dynam
 class DynamicDynamoDBCLI < Thor
 
   desc 'rotate', 'Makes sure all tables exist in DynamoDB and drops those that are no longer required based on the rotation schemes'
-  option :skipdeletion, :type => :boolean
+  option :deletion, :type => :boolean
     def rotate(path)
       @manager = DynamicDynamoDBManager.new
       # create all new tables
       puts "Creating required tables"
       @manager.create_dynamodb_tables
-      unless options[:skipdeletion]
+      if options[:deletion]
         # remove all old tables
         puts "Removing tables which are no longer needed according to the rotation scheme"
         @manager.cleanup_tables

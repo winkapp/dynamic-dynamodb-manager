@@ -9,16 +9,22 @@ describe DynamicDynamoDBManager do
   end
 
   it 'returns a list of created tables' do
-    expect(@manager.collections.include?('Sessions')).to eq(true)
+    tables = @manager.get_all_tables
+    tables.each do | table |
+      expect(@manager.collections.include?(table['TableName'])).to eq(true)
+    end
   end
 
-  after do
-    tables = @manager.get_api_tables
+  it 'returns a an empty list after deleting all tables' do
+    tables = @manager.get_all_tables
     tables.each { |t|
       params = { table_name: t['TableName'] }
       puts "Deleting table " + t['TableName'] + "."
       @manager.dynamo_client.delete_table(params)
     }
+    tables.each do | table |
+      expect(@manager.collections.include?(table['TableName'])).to eq(false)
+    end
   end
 
 end

@@ -27,16 +27,17 @@ class DynamicDynamoDBManager
 
   attr_reader :dynamo_client
   attr_accessor :api_tables
+  attr_accessor :dynamodb_tables
 
   def initialize(aws_config = nil)
 
     # Setup default configs using dotenv libraries
     ENV['DYNAMODB_ENDPOINT'] ||= "localhost"
-    ENV['DYNAMODB_PORT'] ||= 4567
-    ENV['AWS_ACCESS_KEY'] ||= '00000'.to_i
-    ENV['AWS_SECRET_ACCESS_KEY'] ||= '00000'.to_i
+    ENV['DYNAMODB_PORT'] ||= '4567'
+    ENV['AWS_ACCESS_KEY'] ||= '00000'
+    ENV['AWS_SECRET_ACCESS_KEY'] ||= '00000'
     ENV['DYNAMODB_API_VERSION'] ||= '2012-08-10'
-    ENV['DYNAMODB_USE_SSL'] ||= false
+    ENV['DYNAMODB_USE_SSL'] ||= '0'
     ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
 
     default_configs = { :dynamo_db_endpoint => ENV['DYNAMODB_ENDPOINT'],
@@ -54,8 +55,7 @@ class DynamicDynamoDBManager
 
     AWS.config(options)
     @dynamo_client = AWS::DynamoDB::Client.new(:api_version => ENV['DYNAMODB_API_VERSION'])
-    tables = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
-    @api_tables = JSON.load(tables)
+    @dynamodb_tables = get_all_tables
   end
 
   def collections()
@@ -64,7 +64,10 @@ class DynamicDynamoDBManager
 
   def get_all_tables()
     tables = Array.new
+    tables_json = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
+    api_tables = JSON.load(tables_json)
 
+    # @todo Make this more error-proof
     api_tables.each do | table|
       rotation_scheme = table['RotationScheme']
       purge_rotation = table['PurgeRotation'].to_i
@@ -191,7 +194,8 @@ class DynamicDynamoDBManager
   end
 
   def write_dynamic_dynamodb_config(path = '/tmp/dynamic-dynamodb.conf')
-    template = File.read("templates/dynamic-dynamodb.erb")
+    cur_dir  = File.dirname(__FILE__)
+    template = File.read(cur_dir+"/../templates/dynamic-dynamodb.erb")
     renderer = ERB.new(template)
     File.open(path, 'w+') { |file| file.write(renderer.result(binding)) }
   end

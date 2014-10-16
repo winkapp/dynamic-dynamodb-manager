@@ -9,7 +9,7 @@ describe DynamicDynamoDBManager do
 
   it 'wrote a config file with all tables' do
     table_names = Array.new
-    tables = @manager.get_api_tables
+    tables = @manager.get_all_tables
     tables.each do |table|
       table_names << table['TableName']
     end

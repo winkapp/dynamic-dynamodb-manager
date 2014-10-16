@@ -73,7 +73,7 @@ decrease-writes-unit: percent
 min-provisioned-writes: 5
 max-provisioned-writes: 1000
 
-<% @api_tables.each do |table| %>
+<% @dynamodb_tables.each do |table| %>
 [table: ^<%= table['TableName'] %>$]
 min-provisioned-writes: <%= table['Properties']['ProvisionedThroughput']['WriteCapacityUnits'] %>
 min-provisioned-reads: <%= table['Properties']['ProvisionedThroughput']['ReadCapacityUnits'] %>
