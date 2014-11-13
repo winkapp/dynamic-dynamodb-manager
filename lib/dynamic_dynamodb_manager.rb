@@ -59,7 +59,16 @@ class DynamicDynamoDBManager
   end
 
   def collections()
-    dynamo_client.list_tables[:table_names]
+    data = {:limit => 100}
+    tables_data = dynamo_client.list_tables(data)
+    tables = tables_data[:table_names]
+    loop do
+      data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
+      tables_data = dynamo_client.list_tables(data_more)
+      tables = tables + tables_data[:table_names]
+      break if tables_data[:last_evaluated_table_name].nil?
+    end
+    tables
   end
 
   def get_all_tables()
@@ -168,7 +177,7 @@ class DynamicDynamoDBManager
 
       # Do not create tables that already exist
       unless collections.include?(table_name)
-        puts "Creating #{table_name}."
+        puts "Creating #{table_name}"
         dynamo_client.create_table(new_table_params)
       end
     end
