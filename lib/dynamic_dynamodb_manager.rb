@@ -205,11 +205,13 @@ class DynamicDynamoDBManager
 
     # Remove all tables that are remaining
     remaining_tables.each do | table_name |
-      if collections.include?(table_name)
-        puts "Deleting #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
-        dynamo_client.delete_table({table_name: table_name })
-        # Sleep for 5 seconds so that we give AWS some time to create the table
-        sleep 5
+      if table_name.include? ENV['RACK_ENV']
+        if collections.include?(table_name)
+          puts "Deleting #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
+          dynamo_client.delete_table({table_name: table_name })
+          # Sleep for 5 seconds so that we give AWS some time to create the table
+          sleep 5
+        end
       end
     end
   end
