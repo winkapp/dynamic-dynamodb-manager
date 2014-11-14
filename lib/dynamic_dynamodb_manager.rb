@@ -63,10 +63,13 @@ class DynamicDynamoDBManager
     tables_data = dynamo_client.list_tables(data)
     tables = tables_data[:table_names]
     loop do
-      data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
-      tables_data = dynamo_client.list_tables(data_more)
-      tables = tables + tables_data[:table_names]
-      break if tables_data[:last_evaluated_table_name].nil?
+      unless tables_data[:last_evaluated_table_name].nil?
+        data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
+        tables_data = dynamo_client.list_tables(data_more)
+        tables = tables + tables_data[:table_names]
+        break if tables_data[:last_evaluated_table_name].nil?
+      end
+      break
     end
     tables
   end
@@ -177,8 +180,10 @@ class DynamicDynamoDBManager
 
       # Do not create tables that already exist
       unless collections.include?(table_name)
-        puts "Creating #{table_name}"
+        puts "Creating #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
         dynamo_client.create_table(new_table_params)
+        # Sleep for 5 seconds so that we give AWS some time to create the table
+        sleep 5
       end
     end
   end
@@ -201,8 +206,10 @@ class DynamicDynamoDBManager
     # Remove all tables that are remaining
     remaining_tables.each do | table_name |
       if collections.include?(table_name)
-        puts "Deleting #{table_name}."
+        puts "Deleting #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
         dynamo_client.delete_table({table_name: table_name })
+        # Sleep for 5 seconds so that we give AWS some time to create the table
+        sleep 5
       end
     end
   end
