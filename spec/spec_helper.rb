@@ -5,9 +5,11 @@ require 'rack/test'
 require 'webmock/rspec'
 require 'open-uri'
 require 'json'
+require 'timecop'
 require File.join(File.dirname(File.dirname(__FILE__)), "lib", "dynamic_dynamodb_manager.rb")
 
 ENV['RACK_ENV'] ||= 'test'
+ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '0'
 
 # disable connection to external services
 WebMock.disable_net_connect!(allow_localhost: true)

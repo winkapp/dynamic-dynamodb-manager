@@ -1,6 +1,6 @@
 [
     {
-        "TableName" : "Sessions",
+        "TableName" : "daily-purge2",
         "RotationScheme" : "daily",
         "PurgeRotation" : "2",
         "Properties" : {
@@ -32,7 +32,7 @@
         }
     },
     {
-        "TableName" : "HttpHeaders",
+        "TableName" : "weekly-purge2",
         "RotationScheme" : "weekly",
         "PurgeRotation" : "2",
         "Properties" : {
@@ -63,7 +63,7 @@
         }
     },
     {
-        "TableName" : "winnow",
+        "TableName" : "monthly-purge4",
         "RotationScheme" : "monthly",
         "PurgeRotation" : "4",
         "Properties" : {
@@ -86,6 +86,70 @@
                     "AttributeName" : "Timestamp",
                     "KeyType" : "RANGE"
                 }
+            ],
+            "ProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "5"
+            }
+        }
+    },
+    {
+        "TableName" : "daily-nopurge",
+        "RotationScheme" : "daily",
+        "PurgeRotation" : "-1",
+        "Properties" : {
+            "AttributeDefinitions" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "AttributeType" : "N"
+                }
+            ],
+            "KeySchema" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "KeyType" : "HASH"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "KeyType" : "RANGE"
+                }
+
+            ],
+            "ProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "5"
+            }
+        }
+    },
+    {
+        "TableName" : "norotation",
+        "RotationScheme" : "none",
+        "PurgeRotation" : "-1",
+        "Properties" : {
+            "AttributeDefinitions" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "AttributeType" : "N"
+                }
+            ],
+            "KeySchema" : [
+                {
+                    "AttributeName" : "SessionId",
+                    "KeyType" : "HASH"
+                },
+                {
+                    "AttributeName" : "Timestamp",
+                    "KeyType" : "RANGE"
+                }
+
             ],
             "ProvisionedThroughput" : {
                 "ReadCapacityUnits" : "5",

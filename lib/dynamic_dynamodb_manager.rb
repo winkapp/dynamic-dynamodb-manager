@@ -39,6 +39,7 @@ class DynamicDynamoDBManager
     ENV['DYNAMODB_API_VERSION'] ||= '2012-08-10'
     ENV['DYNAMODB_USE_SSL'] ||= '0'
     ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
+    ENV['DYNAMODB_SLEEP_INTERVAL'] ||= "5"
 
     default_configs = { :dynamo_db_endpoint => ENV['DYNAMODB_ENDPOINT'],
                    :dynamo_db_port     => ENV['DYNAMODB_PORT'].to_i,
@@ -75,14 +76,8 @@ class DynamicDynamoDBManager
   end
 
   def get_all_tables()
+    api_tables = get_table_scheme
     tables = Array.new
-    begin
-      tables_json = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
-      api_tables = JSON.load(tables_json)
-    rescue
-      raise "JSON file #{ENV['API_TABLE_RESOURCE']} could not properly be read. Please make sure your source is accurate."
-    end
-
 
     # @todo Make this more error-proof
     api_tables.each do | table|
@@ -91,7 +86,20 @@ class DynamicDynamoDBManager
       table_name = table['TableName']
       environment = ENV['RACK_ENV']
 
+      # If purge rotation equals infinite, we still will create at least 4 tables.
+      # We do this to make sure it will create a new table and have at least a couple of
+      # tables so the app can write historical data to it.
+      if purge_rotation.equal?(-1)
+        purge_rotation = 4
+      end
+
       case rotation_scheme
+        when "none"
+          # syntax
+          # stack.tablename
+          temp_table = Marshal.load(Marshal.dump(table))
+          temp_table['TableName'] = "#{environment}.#{table_name}"
+          tables << temp_table
         when "daily"
           # syntax
           # stack.tablename.20041011
@@ -112,7 +120,10 @@ class DynamicDynamoDBManager
           # stack.tablename.20041011
           i = 0
           days = purge_rotation * 7 + 1
-          start_date = date_of_next('monday')
+
+          start_date = Date.today
+          start_date += 1 + ((0-start_date.wday) % 7)
+
           while i < days  do
             table_prefix = start_date-i
             i=i+7
@@ -148,6 +159,7 @@ class DynamicDynamoDBManager
   end
 
   def date_of_next(day)
+
     date  = Date.parse(day)
     delta = date > Date.today ? 0 : 7
     date + delta
@@ -179,11 +191,13 @@ class DynamicDynamoDBManager
                            table_name: table_name }
 
       # Do not create tables that already exist
-      unless collections.include?(table_name)
-        puts "Creating #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
+      if collections.include?(table_name)
+        puts "#{table_name} already exists. Skipping..."
+      else
+        puts "Creating #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
         dynamo_client.create_table(new_table_params)
         # Sleep for 5 seconds so that we give AWS some time to create the table
-        sleep 5
+        sleep ENV['DYNAMODB_SLEEP_INTERVAL'].to_i
       end
     end
   end
@@ -205,12 +219,25 @@ class DynamicDynamoDBManager
 
     # Remove all tables that are remaining
     remaining_tables.each do | table_name |
+      # Check if it is part of this environment
       if table_name.include? ENV['RACK_ENV']
+        # Check if the table name is known
         if collections.include?(table_name)
-          puts "Deleting #{table_name}. System will sleep for 5 seconds for AWS limit purposes."
+          # Check if it has a rotation scheme.
+          if table_name.include? '.'
+            clean_tablename = table_name.split(/\./)[1]
+            table_scheme = get_table_scheme(clean_tablename)
+            if table_scheme['PurgeRotation'].to_i.equal?(-1)
+              puts "Not deleting #{table_name}. Rotation was set to infinite."
+              # go to the next table
+              next
+            end
+          end
+          # Not known to us and also no infinite rotation
+          puts "Deleting #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
           dynamo_client.delete_table({table_name: table_name })
           # Sleep for 5 seconds so that we give AWS some time to create the table
-          sleep 5
+          sleep ENV['DYNAMODB_SLEEP_INTERVAL'].to_i
         end
       end
     end
@@ -222,5 +249,25 @@ class DynamicDynamoDBManager
     renderer = ERB.new(template)
     File.open(path, 'w+') { |file| file.write(renderer.result(binding)) }
   end
+
+  def get_table_scheme(table_name = nil)
+    begin
+      tables_json = open(ENV['API_TABLE_RESOURCE']) { |f| f.read }
+      api_tables = JSON.load(tables_json)
+    rescue
+      raise "JSON file #{ENV['API_TABLE_RESOURCE']} could not properly be read. Please make sure your source is accurate."
+    end
+
+    unless table_name.nil?
+      api_tables.each do | table_definition|
+        if table_definition['TableName'] == table_name
+          return table_definition
+        end
+      end
+    end
+    # If not specified, return all tables
+    api_tables
+  end
+
 
 end

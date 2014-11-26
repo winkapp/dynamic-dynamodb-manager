@@ -108,6 +108,11 @@ Note: If you installed via bundle
 bundle exec dynamic-dynamodb-manager-cli
 ```
 
+## Running tests
+
+* bundle exec rake fake_dynamo &
+* bundle exec rake test
+
 ## API structure to consume.
 
 The following example is what this tool expects in order to create the tables automatically. It will read it (see API_TABLE_RESOURCE env variable) and use this to create tables and or write the appropriate config files.

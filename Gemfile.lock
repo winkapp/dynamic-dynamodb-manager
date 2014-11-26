@@ -78,6 +78,7 @@ GEM
     thor (0.19.1)
     thread_safe (0.3.4)
     tilt (1.4.1)
+    timecop (0.7.1)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
     webmock (1.19.0)
@@ -92,4 +93,5 @@ DEPENDENCIES
   fake_dynamo
   rack-test
   rspec
+  timecop
   webmock
