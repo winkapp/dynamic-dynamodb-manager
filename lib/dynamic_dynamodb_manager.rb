@@ -70,21 +70,33 @@ class DynamicDynamoDBManager
       tables_data = dynamo_client.list_tables(data)
       tables = tables_data[:table_names]
       loop do
-        unless tables_data[:last_evaluated_table_name].nil?
-          data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
-          tables_data = dynamo_client.list_tables(data_more)
-          tables = tables + tables_data[:table_names]
-          break if tables_data[:last_evaluated_table_name].nil?
+        data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
+        tables_data = dynamo_client.list_tables(data_more)
+        tables = tables + tables_data[:table_names]
+        if tables_data[:last_evaluated_table_name].nil?
+          break
         end
-        break
       end
 
       tables.each do | table |
-        table_info = dynamo_client.describe_table({:table_name => table})
-        # Remove the table from the current list of tables if it is in a deleting state
-        if table_info[:table_status] == 'DELETING'
+        # If it is part of a different environment, do not list it
+        unless table.include? ENV['RACK_ENV']
+          tables.delete(table)
+          next
+        end
+
+        begin
+          table_info = dynamo_client.describe_table({:table_name => table})
+          # Remove the table from the current list of tables if it is in a deleting state
+          if table_info[:table_status] == 'DELETING'
+            tables.delete(table)
+          end
+        rescue ResourceNotFoundException
+          # rescuing the ResourceNotFoundException means it might have
+          # been in a delete state and listed but not present anymore
           tables.delete(table)
         end
+
       end
       @dynamodb_tables = tables
     end
