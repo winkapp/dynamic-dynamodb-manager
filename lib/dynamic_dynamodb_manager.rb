@@ -62,15 +62,20 @@ class DynamicDynamoDBManager
     @dynamodb_tables = get_all_tables
   end
 
-  def get_all_tables(refresh = false)
+  def get_all_tables(refresh = false, include_other = false)
     if refresh.equal?(false) and !@dynamodb_tables.nil?
       tables = @dynamodb_tables
     else
-      data = {:limit => 100}
-      tables_data = dynamo_client.list_tables(data)
-      tables = tables_data[:table_names]
+      tables = []
+      tables_data = {:table_names => {}, :last_evaluated_table_name => ""}
+
       loop do
-        data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
+        data_more = {:limit => 100}
+        if tables_data[:last_evaluated_table_name] == ""
+           data_more[:exclusive_start_table_name] = ""
+        else
+          data_more[:exclusive_start_table_name] = tables_data[:last_evaluated_table_name]
+        end
         tables_data = dynamo_client.list_tables(data_more)
         tables = tables + tables_data[:table_names]
         if tables_data[:last_evaluated_table_name].nil?
@@ -80,7 +85,7 @@ class DynamicDynamoDBManager
 
       tables.each do | table |
         # If it is part of a different environment, do not list it
-        unless table.include? ENV['RACK_ENV']
+        if !(table.include? ENV['RACK_ENV']) and include_other.equal?(false)
           tables.delete(table)
           next
         end

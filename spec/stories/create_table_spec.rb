@@ -14,7 +14,7 @@ describe DynamicDynamoDBManager do
   end
 
   it 'returns a list of collections' do
-    expect(@manager.get_all_tables(true).include?('some-random-collection-one')).to eq(true)
+    expect(@manager.get_all_tables(true, true).include?('some-random-collection-one')).to eq(true)
   end
 
   after do
