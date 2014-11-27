@@ -27,6 +27,7 @@ class DynamicDynamoDBManager
 
   attr_reader :dynamo_client
   attr_accessor :api_tables
+  attr_accessor :dynamodb_required_tables
   attr_accessor :dynamodb_tables
 
   def initialize(aws_config = nil)
@@ -54,120 +55,132 @@ class DynamicDynamoDBManager
       options = default_configs.merge(aws_config)
     end
 
+    # Add some static caching. We know we don't need to ask AWS too much more after initialization.
     AWS.config(options)
     @dynamo_client = AWS::DynamoDB::Client.new(:api_version => ENV['DYNAMODB_API_VERSION'])
+    @dynamodb_required_tables = get_all_required_tables
     @dynamodb_tables = get_all_tables
   end
 
-  def collections()
-    data = {:limit => 100}
-    tables_data = dynamo_client.list_tables(data)
-    tables = tables_data[:table_names]
-    loop do
-      unless tables_data[:last_evaluated_table_name].nil?
-        data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
-        tables_data = dynamo_client.list_tables(data_more)
-        tables = tables + tables_data[:table_names]
-        break if tables_data[:last_evaluated_table_name].nil?
+  def get_all_tables(refresh = false)
+    if refresh.equal?(false) and !@dynamodb_tables.nil?
+      tables = @dynamodb_tables
+    else
+      data = {:limit => 100}
+      tables_data = dynamo_client.list_tables(data)
+      tables = tables_data[:table_names]
+      loop do
+        unless tables_data[:last_evaluated_table_name].nil?
+          data_more = {:limit => 100, :exclusive_start_table_name => tables_data[:last_evaluated_table_name]}
+          tables_data = dynamo_client.list_tables(data_more)
+          tables = tables + tables_data[:table_names]
+          break if tables_data[:last_evaluated_table_name].nil?
+        end
+        break
       end
-      break
+
+      tables.each do | table |
+        table_info = dynamo_client.describe_table({:table_name => table})
+        # Remove the table from the current list of tables if it is in a deleting state
+        if table_info[:table_status] == 'DELETING'
+          tables.delete(table)
+        end
+      end
+      @dynamodb_tables = tables
     end
     tables
   end
 
-  def get_all_tables()
-    api_tables = get_table_scheme
-    tables = Array.new
+  def get_all_required_tables(refresh = false)
+    if refresh.equal?(false) and !@dynamodb_required_tables.nil?
+      tables = @dynamodb_required_tables
+    else
+      api_tables = get_table_scheme
+      tables = Array.new
 
-    # @todo Make this more error-proof
-    api_tables.each do | table|
-      rotation_scheme = table['RotationScheme']
-      purge_rotation = table['PurgeRotation'].to_i
-      table_name = table['TableName']
-      environment = ENV['RACK_ENV']
+      # @todo Make this more error-proof
+      api_tables.each do | table|
+        rotation_scheme = table['RotationScheme']
+        purge_rotation = table['PurgeRotation'].to_i
+        table_name = table['TableName']
+        environment = ENV['RACK_ENV']
 
-      # If purge rotation equals infinite, we still will create at least 4 tables.
-      # We do this to make sure it will create a new table and have at least a couple of
-      # tables so the app can write historical data to it.
-      if purge_rotation.equal?(-1)
-        purge_rotation = 4
-      end
+        # If purge rotation equals infinite, we still will create at least 4 tables.
+        # We do this to make sure it will create a new table and have at least a couple of
+        # tables so the app can write historical data to it.
+        if purge_rotation.equal?(-1)
+          purge_rotation = 4
+        end
 
-      case rotation_scheme
-        when "none"
-          # syntax
-          # stack.tablename
-          temp_table = Marshal.load(Marshal.dump(table))
-          temp_table['TableName'] = "#{environment}.#{table_name}"
-          tables << temp_table
-        when "daily"
-          # syntax
-          # stack.tablename.20041011
-          i = 0
-          start_date = Date.today + 1
-          days = purge_rotation + 1
-          while i < days  do
-            table_prefix = start_date-i
-            i=i+1
-            # Create a deep copy by taking the variables and copy them into the new object
-            # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
+        case rotation_scheme
+          when "none"
+            # syntax
+            # stack.tablename
             temp_table = Marshal.load(Marshal.dump(table))
-            temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+            temp_table['TableName'] = "#{environment}.#{table_name}"
             tables << temp_table
-          end
-        when "weekly"
-          # syntax
-          # stack.tablename.20041011
-          i = 0
-          days = purge_rotation * 7 + 1
+          when "daily"
+            # syntax
+            # stack.tablename.20041011
+            i = 0
+            start_date = Date.today + 1
+            days = purge_rotation + 1
+            while i < days  do
+              table_prefix = start_date-i
+              i=i+1
+              # Create a deep copy by taking the variables and copy them into the new object
+              # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
+              temp_table = Marshal.load(Marshal.dump(table))
+              temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+              tables << temp_table
+            end
+          when "weekly"
+            # syntax
+            # stack.tablename.20041011
+            i = 0
+            days = purge_rotation * 7 + 1
 
-          start_date = Date.today
-          start_date += 1 + ((0-start_date.wday) % 7)
+            start_date = Date.today
+            start_date += 1 + ((0-start_date.wday) % 7)
 
-          while i < days  do
-            table_prefix = start_date-i
-            i=i+7
-            # Create a deep copy by taking the variables and copy them into the new object
-            # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
-            temp_table = Marshal.load(Marshal.dump(table))
-            temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
-            tables << temp_table
-          end
-        when "monthly"
-          i = 0
-          # Add one more month so we have a buffer when we purge
-          months = purge_rotation+1
-          # Create a dateTime object with x+1 month in the past so we can
-          # start counting up from there
-          dt = Time.new().to_datetime. << months
-          while i < months  do
-            # Setting our real date with 2 months in the future as offset
-            table_prefix = dt >> i+2
-            i=i+1
-            # Create a deep copy by taking the variables and copy them into the new object
-            # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
-            temp_table = Marshal.load(Marshal.dump(table))
-            # Forced to 01 as we always want the first of the month
-            temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
-            tables << temp_table
-          end
-        else
-          raise "RotationScheme #{rotation_scheme} is not supported"
+            while i < days  do
+              table_prefix = start_date-i
+              i=i+7
+              # Create a deep copy by taking the variables and copy them into the new object
+              # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
+              temp_table = Marshal.load(Marshal.dump(table))
+              temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+              tables << temp_table
+            end
+          when "monthly"
+            i = 0
+            # Add one more month so we have a buffer when we purge
+            months = purge_rotation+1
+            # Create a dateTime object with x+1 month in the past so we can
+            # start counting up from there
+            dt = Time.new().to_datetime. << months
+            while i < months  do
+              # Setting our real date with 2 months in the future as offset
+              table_prefix = dt >> i+2
+              i=i+1
+              # Create a deep copy by taking the variables and copy them into the new object
+              # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
+              temp_table = Marshal.load(Marshal.dump(table))
+              # Forced to 01 as we always want the first of the month
+              temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+              tables << temp_table
+            end
+          else
+            raise "RotationScheme #{rotation_scheme} is not supported"
+        end
       end
     end
+    @dynamodb_required_tables = tables
     tables
   end
-
-  def date_of_next(day)
-
-    date  = Date.parse(day)
-    delta = date > Date.today ? 0 : 7
-    date + delta
-  end
-
 
   def create_dynamodb_tables()
-    tables = get_all_tables
+    tables = @dynamodb_required_tables
     tables.each do | table |
 
       attribute_definitions = Array.new
@@ -191,7 +204,7 @@ class DynamicDynamoDBManager
                            table_name: table_name }
 
       # Do not create tables that already exist
-      if collections.include?(table_name)
+      if @dynamodb_tables.include?(table_name)
         puts "#{table_name} already exists. Skipping..."
       else
         puts "Creating #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
@@ -203,7 +216,7 @@ class DynamicDynamoDBManager
   end
 
   def cleanup_tables()
-    all_tables = get_all_tables
+    all_tables = @dynamodb_required_tables
 
     # Get all our expected tables
     expected_tables = Array.new
@@ -212,7 +225,7 @@ class DynamicDynamoDBManager
     end
 
     # Get all existing tables
-    existing_tables = collections
+    existing_tables = @dynamodb_tables
 
     # Make the diff between those.
     remaining_tables = existing_tables - expected_tables
@@ -222,7 +235,7 @@ class DynamicDynamoDBManager
       # Check if it is part of this environment
       if table_name.include? ENV['RACK_ENV']
         # Check if the table name is known
-        if collections.include?(table_name)
+        if @dynamodb_tables.include?(table_name)
           # Check if it has a rotation scheme.
           if table_name.include? '.'
             clean_tablename = table_name.split(/\./)[1]
@@ -241,6 +254,8 @@ class DynamicDynamoDBManager
         end
       end
     end
+    # Refresh all tables
+    get_all_tables(true)
   end
 
   def write_dynamic_dynamodb_config(path = '/tmp/dynamic-dynamodb.conf')
