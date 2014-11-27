@@ -71,9 +71,7 @@ class DynamicDynamoDBManager
 
       loop do
         data_more = {:limit => 100}
-        if tables_data[:last_evaluated_table_name] == ""
-           data_more[:exclusive_start_table_name] = ""
-        else
+        if tables_data[:last_evaluated_table_name] != ""
           data_more[:exclusive_start_table_name] = tables_data[:last_evaluated_table_name]
         end
         tables_data = dynamo_client.list_tables(data_more)
