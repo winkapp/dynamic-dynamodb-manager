@@ -4,6 +4,7 @@ require 'bundler'
 
 cur_dir  = File.dirname(__FILE__)
 require cur_dir+"/../lib/dynamic_dynamodb_manager.rb"
+require cur_dir+"/../lib/dynamodb_cleanup.rb"
 
 class DynamicDynamoDBCLI < Thor
 
@@ -25,6 +26,13 @@ class DynamicDynamoDBCLI < Thor
       puts "wrote the Dynamic DynamoDB config file to #{path}"
     end
 
+  desc 'cleanup', 'Fetches all the stacks and cleans up all tables that are not part of an existing stack based on the stack environment parameter.'
+    def cleanup()
+      # Delete all tables from stacks that are no longer there
+      @cleanup = DynamoDbCleanup.new
+      @cleanup.get_all_environments
+      @cleanup.delete_unknown_tables
+    end
 end
 
 DynamicDynamoDBCLI.start(ARGV)

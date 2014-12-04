@@ -106,6 +106,10 @@ class DynamicDynamoDBManager
     tables
   end
 
+  def delete_table(table_name)
+    dynamo_client.delete_table({table_name: table_name })
+  end
+
   def get_all_required_tables(refresh = false)
     if refresh.equal?(false) and !@dynamodb_required_tables.nil?
       tables = @dynamodb_required_tables
@@ -263,7 +267,7 @@ class DynamicDynamoDBManager
           end
           # Not known to us and also no infinite rotation
           puts "Deleting #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
-          dynamo_client.delete_table({table_name: table_name })
+          delete_table(table_name)
           # Sleep for 5 seconds so that we give AWS some time to create the table
           sleep ENV['DYNAMODB_SLEEP_INTERVAL'].to_i
         end
