@@ -7,14 +7,14 @@
 region: us-east-1
 
 # How often should Dynamic DynamoDB monitor changes (in seconds)
-check-interval: 300
+check-interval: 120
 
 # Circuit breaker configuration
 # No provisioning updates will be made unless this URL returns
 # a HTTP 200 OK status code
 # http://mollom-ap-mollomco-1l8p9oku9317q-1436803661.us-east-1.elb.amazonaws.com/v1/captcha/image/test.png
-circuit-breaker-url: <%= @mollom_entrypoint %>
-circuit-breaker-timeout: 500
+#circuit-breaker-url: <%= @mollom_entrypoint %>
+#circuit-breaker-timeout: 500
 
 [logging]
 # Log level [debug|info|warning|error]
@@ -31,7 +31,7 @@ enable-reads-up-scaling = true
 enable-reads-down-scaling = true
 
 # Thresholds for scaling up or down the provisioning (%)
-reads-upper-threshold: 90
+reads-upper-threshold: 70
 reads-lower-threshold: 30
 
 # How many percent should Dynamic DynamoDB increase/decrease provisioning with (%)
@@ -45,7 +45,7 @@ decrease-reads-unit: percent
 # Maximum and minimum read provisioning
 # Dynamic DynamoDB will not provision any more or less reads than this
 min-provisioned-reads: 5
-max-provisioned-reads: 1000
+max-provisioned-reads: 15000
 
 # Threshold for trigging throughput alarm to send notification (%)
 # writes-upper-alarm-threshold: 0
@@ -57,7 +57,7 @@ enable-writes-up-scaling = true
 enable-writes-down-scaling = true
 
 # Thresholds for scaling up or down the provisioning (%)
-writes-upper-threshold: 90
+writes-upper-threshold: 70
 writes-lower-threshold: 30
 
 # How many percent should Dynamic DynamoDB increase/decrease provisioning with (%)
@@ -71,7 +71,7 @@ decrease-writes-unit: percent
 # Maximum and minimum write provisioning
 # Dynamic DynamoDB will not provision any more or less writes than this
 min-provisioned-writes: 5
-max-provisioned-writes: 1000
+max-provisioned-writes: 15000
 
 <% @dynamodb_required_tables.each do |table| %>
 [table: ^<%= table['TableName'] %>$]
