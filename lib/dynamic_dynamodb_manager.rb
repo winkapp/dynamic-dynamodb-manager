@@ -7,7 +7,7 @@ require 'pp'
 require 'open-uri'
 require 'date'
 
-ENV['RACK_ENV'] ||= 'development'fo
+ENV['RACK_ENV'] ||= 'development'
 puts "Loading with environment #{ENV['RACK_ENV']}"
 Dotenv.load("../#{ENV['RACK_ENV']}.env")
 
