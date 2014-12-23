@@ -32,11 +32,11 @@ describe DynamicDynamoDBManager do
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".weekly-purge2.20141215")).to eq(true)
 
       # Monthly with rotate 4 means 1 month ahead and 4 behind. Starting on the first day of the month.
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20150124")).to eq(true)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140924")).to eq(true)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141024")).to eq(true)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141124")).to eq(true)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141224")).to eq(true)
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20150101")).to eq(true)
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140901")).to eq(true)
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141001")).to eq(true)
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141101")).to eq(true)
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141201")).to eq(true)
 
       # daily with rotate 4 means 1 day ahead and 4 behind. The nopurge means they will not get deleted.
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".daily-nopurge.20141225")).to eq(true)
@@ -115,11 +115,10 @@ describe DynamicDynamoDBManager do
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".weekly-purge2.20140825")).to eq(false)
 
       # Monthly with rotate 4 means 1 month ahead and 4 behind. Starting on the first day of the month.
+      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140501")).to eq(false)
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140601")).to eq(false)
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140701")).to eq(false)
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140801")).to eq(false)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20140901")).to eq(false)
-      expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".monthly-purge4.20141001")).to eq(false)
 
       # daily with rotate 4 means 1 day ahead and 4 behind. The nopurge means they will not get deleted.
       expect(@manager.get_all_tables.include?(ENV['RACK_ENV']+".daily-nopurge.20140902")).to eq(true)
