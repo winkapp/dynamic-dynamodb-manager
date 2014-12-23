@@ -7,7 +7,7 @@ require 'pp'
 require 'open-uri'
 require 'date'
 
-ENV['RACK_ENV'] ||= 'development'
+ENV['RACK_ENV'] ||= 'development'fo
 puts "Loading with environment #{ENV['RACK_ENV']}"
 Dotenv.load("../#{ENV['RACK_ENV']}.env")
 
@@ -186,7 +186,7 @@ class DynamicDynamoDBManager
               # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
               temp_table = Marshal.load(Marshal.dump(table))
               # Forced to 01 as we always want the first of the month
-              temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+              temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m01')
               tables << temp_table
             end
           else
