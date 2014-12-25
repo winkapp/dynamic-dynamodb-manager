@@ -27,7 +27,11 @@
             ],
             "ProvisionedThroughput" : {
                 "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "5"
+                "WriteCapacityUnits" : "600"
+            },
+            "OutdatedTableProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "30"
             }
         }
     },
@@ -58,7 +62,11 @@
             ],
             "ProvisionedThroughput" : {
                 "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "5"
+                "WriteCapacityUnits" : "600"
+            },
+            "OutdatedTableProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "30"
             }
         }
     },
@@ -89,7 +97,11 @@
             ],
             "ProvisionedThroughput" : {
                 "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "5"
+                "WriteCapacityUnits" : "600"
+            },
+            "OutdatedTableProvisionedThroughput" : {
+                "ReadCapacityUnits" : "5",
+                "WriteCapacityUnits" : "30"
             }
         }
     },

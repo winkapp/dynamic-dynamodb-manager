@@ -151,6 +151,15 @@ class DynamicDynamoDBManager
               # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
               temp_table = Marshal.load(Marshal.dump(table))
               temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+
+              # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
+              # the latter get the OutdatedTableProvisionedThroughput
+              if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
+                if (i > 2)
+                  temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                end
+              end
+
               tables << temp_table
             end
           when "weekly"
@@ -169,6 +178,16 @@ class DynamicDynamoDBManager
               # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
               temp_table = Marshal.load(Marshal.dump(table))
               temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
+
+              # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
+              # the latter get the OutdatedTableProvisionedThroughput
+              if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
+                if (i/7 > 2)
+                  temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                end
+              end
+
+
               tables << temp_table
             end
           when "monthly"
@@ -187,6 +206,15 @@ class DynamicDynamoDBManager
               temp_table = Marshal.load(Marshal.dump(table))
               # Forced to 01 as we always want the first of the month
               temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m01')
+
+              # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
+              # the latter get the OutdatedTableProvisionedThroughput
+              if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
+                if (months - i > 1)
+                  temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                end
+              end
+
               tables << temp_table
             end
           else
