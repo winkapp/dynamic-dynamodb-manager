@@ -73,12 +73,6 @@ decrease-writes-unit: percent
 min-provisioned-writes: 5
 max-provisioned-writes: 15000
 
-<% @dynamodb_required_tables.each do |table| %>
-[table: ^<%= table['TableName'] %>$]
-min-provisioned-writes: <%= table['Properties']['ProvisionedThroughput']['WriteCapacityUnits'] %>
-min-provisioned-reads: <%= table['Properties']['ProvisionedThroughput']['ReadCapacityUnits'] %>
-<% end %>
-
 #
 # Other settings
 #
@@ -90,3 +84,10 @@ allow-scaling-down-writes-on-0-percent: true
 # Restrict scale down to only happen when BOTH reads AND writes are in need
 # of scaling down. Set this to "true" to minimize down scaling.
 always-decrease-rw-together: true
+
+<% @dynamodb_required_tables.each do |table| %>
+[table: ^<%= table['TableName'] %>$]
+min-provisioned-writes: <%= table['Properties']['ProvisionedThroughput']['WriteCapacityUnits'] %>
+min-provisioned-reads: <%= table['Properties']['ProvisionedThroughput']['ReadCapacityUnits'] %>
+<% end %>
+
