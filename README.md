@@ -154,7 +154,3 @@ RotationScheme accepts the following values: daily, weekly, monthly.
         }
     ]
 @todo
-
-## Related Projects
-
-* [Mollom](https://github.com/mollom/backend)
