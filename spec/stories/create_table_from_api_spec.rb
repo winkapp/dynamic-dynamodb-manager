@@ -48,6 +48,106 @@ describe DynamicDynamoDBManager do
     end
   end
 
+  it 'sets the throughput to values that are cost-effective' do
+    Timecop.freeze Date.new(2014,12,24) do
+      # Refresh tables
+      # Refresh tables
+      @manager.get_all_tables(true)
+      tables = @manager.get_all_required_tables(true)
+
+      # Daily rotation for 20141224, and 20141225 should be set higher than any other table for the same prefix
+      tables.each do | table |
+        if table['TableName'] === "development.daily-purge2.20141224"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.daily-purge2.20141225"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+
+        # weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
+        # the week after, 20141229 should be set lower
+        if table['TableName'] === "development.weekly-purge2.20141222"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.weekly-purge2.20141229"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('30')
+        end
+        # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+        # the month after, 20150101 should be set lower
+        if table['TableName'] === "development.monthly-purge4.20141201"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.monthly-purge4.20150101"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('30')
+        end
+      end
+    end
+
+    Timecop.freeze Date.new(2014,12,28) do
+      # Refresh tables
+      # Refresh tables
+      @manager.get_all_tables(true)
+      tables = @manager.get_all_required_tables(true)
+      tables.each do | table |
+        # Daily rotation for 20141228, and 20141229 should be set higher than any other table for the same prefix
+        if table['TableName'] === "development.daily-purge2.20141228"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.daily-purge2.20141229"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        # weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
+        # the week after, 20141229 should also be set higher
+        if table['TableName'] === "development.weekly-purge2.20141222"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.weekly-purge2.20141229"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+        # the month after, 20150101 should be set lower
+        if table['TableName'] === "development.monthly-purge4.20141201"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.monthly-purge4.20150101"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('30')
+        end
+      end
+    end
+
+    Timecop.freeze Date.new(2014,12,31) do
+      # Refresh tables
+      # Refresh tables
+      @manager.get_all_tables(true)
+      tables = @manager.get_all_required_tables(true)
+      tables.each do | table |
+        # Daily rotation for 20141231, and 20150101 should be set higher than any other table for the same prefix
+        if table['TableName'] === "development.daily-purge2.20141231"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.daily-purge2.20150101"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        # weekly rotation with date 20141229 should be set higher than any other table for the same prefix.
+        # the week after, 20150105 should be set lower
+        if table['TableName'] === "development.weekly-purge2.20141229"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.weekly-purge2.20150105"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('30')
+        end
+        # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+        # the month after, 20150101 should also be set higher
+        if table['TableName'] === "development.monthly-purge4.20141201"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+        if table['TableName'] === "development.monthly-purge4.20150101"
+          expect(table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']).to eq('600')
+        end
+      end
+    end
+  end
+
   it 'successfully cleans up old tables' do
     Timecop.freeze Date.new(2014,9,1) do
       puts "Creating all dynamoDB tables from an API list but with an older date"

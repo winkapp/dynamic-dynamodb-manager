@@ -165,28 +165,39 @@ class DynamicDynamoDBManager
           when "weekly"
             # syntax
             # stack.tablename.20041011
-            i = 0
+            day_count = 0
             days = purge_rotation * 7 + 1
 
             start_date = Date.today
             start_date += 1 + ((0-start_date.wday) % 7)
 
-            while i < days  do
-              table_prefix = start_date-i
-              i=i+7
+            while day_count < days  do
+              table_prefix = start_date-day_count
+              day_count=day_count+7
               # Create a deep copy by taking the variables and copy them into the new object
               # @see http://ruby.about.com/od/advancedruby/a/deepcopy.htm
               temp_table = Marshal.load(Marshal.dump(table))
               temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m%d')
 
-              # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
-              # the latter get the OutdatedTableProvisionedThroughput
+              # if Throughput limitations are given, the first week gets the ProvisionedThroughput and the day before
+              # the next week is active, it will also receive the ProvisionedThroughput.
+              # everything else gets the OutdatedTableProvisionedThroughput
               if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
-                if (i/7 > 2)
-                  temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                tomorrow = Date.today + 1
+
+                if day_count.eql? 7
+                  # This is next week
+                  unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m%d')
+                    temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                  end
+                end
+                # everything except current week
+                unless day_count.eql? 14
+                  unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m%d')
+                    temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                  end
                 end
               end
-
 
               tables << temp_table
             end
@@ -207,12 +218,21 @@ class DynamicDynamoDBManager
               # Forced to 01 as we always want the first of the month
               temp_table['TableName'] = "#{environment}.#{table_name}."+table_prefix.strftime('%Y%m01')
 
-              # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
-              # the latter get the OutdatedTableProvisionedThroughput
+              # if Throughput limitations are given, the first month gets the ProvisionedThroughput and the day before
+              # the next month is active, it will also receive the ProvisionedThroughput.
+              # everything else gets the OutdatedTableProvisionedThroughput
+              tomorrow = Date.today + 1
+
               if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
-                if (months - i > 1)
-                  temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                # since we always do one month in the future. Month with i equal to 1 is our current month.
+                # Month 0 is the future month and only if the date of that new month is tomorrow, it will get
+                # the updated ProvisionedThroughput
+                unless (months - i).eql? 1
+                  unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m01')
+                    temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
+                  end
                 end
+
               end
 
               tables << temp_table
