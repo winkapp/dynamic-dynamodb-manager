@@ -1,5 +1,5 @@
 require 'open-uri'
-require 'aws-sdk'
+require 'aws-sdk-v1'
 require 'json'
 require 'erb'
 require 'dotenv'
