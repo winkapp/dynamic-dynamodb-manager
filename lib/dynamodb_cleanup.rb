@@ -49,6 +49,9 @@ class DynamoDbCleanup
   def get_all_environments()
     environments = Array.new
     @cf.stacks.each do | stack |
+      # Avoid throttling
+      sleep(1)
+      # Get environment params
       environment = stack.parameters['EnvironmentName']
       unless environment.nil?
         environments.push(environment) unless environments.include?(environment)
