@@ -15,14 +15,14 @@ describe DynamicDynamoDBManager do
     end
 
     @manager.write_dynamic_dynamodb_config('/tmp/testing.cnf')
-    File.open("/tmp/testing.cnf") do |f|
+    File.open('/tmp/testing.cnf') do |f|
       f.each_line do |line|
         if line =~ /\[table/
           line.gsub! '[table: ^', ''
           line.gsub! '$]', ''
           line.delete!("\n")
           puts "Found table: #{line}"
-          expect(table_names.include?(line)).to eq(true)
+          expect(table_names).to include(line)
         end
       end
     end

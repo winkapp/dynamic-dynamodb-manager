@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/Mollom/dynamic-dynamodb-manager.svg?branch=master)](https://travis-ci.org/Mollom/dynamic-dynamodb-manager)
 
 # Dynamic DynamoDB Table Manager
 
@@ -6,9 +5,7 @@ This repository contains a Ruby client library that is primarily used for Mollom
 weekly or daily scheme using a predefined pattern. It also includes a command line tool that can be run via any
  *nix-like terminal.
 
-It extends https://github.com/sebdah/dynamic-dynamodb by dynamically writing a config file that can be read by
-dynamic-dynamodb service.
-Logically, dynamic-dynamodb is also required.
+It extends https://github.com/sebdah/dynamic-dynamodb by dynamically writing a config file that can be read by dynamic-dynamodb service.
 
 ## Installation
 
@@ -20,15 +17,15 @@ In each environment you are running this GEM you will need the following environ
     AWS_SECRET_ACCESS_KEY='00000'
     DYNAMODB_API_VERSION='2012-08-10'
     DYNAMODB_USE_SSL=0
-    API_TABLE_RESOURCE='http://testing.com/v1/system/tables'
+    API_TABLE_RESOURCE='spec/support/fixtures/tables.json'
     BUGSNAG_APIKEY=
     
-Without these environment variables, it will not be able to create your tables as the API_TABLE_RESOURCE does not exist in real life. It only exists in the testing world ;-)
+Without these environment variables, it will not be able to create your tables as the API_TABLE_RESOURCE does not exist in real life. It only exists in the testing world
 
 ## Install cli tool
 
 ```
-git clone https://github.com/Mollom/dynamic-dynamodb-manager.git
+git clone https://github.com/winkapp/dynamic-dynamodb-manager.git
 cd dynamic-dynamodb-manager
 gem build dynamic-dynamodb-manager.gemspec
 gem install dynamic-dynamodb-manager-0.0.1.gem
@@ -44,13 +41,11 @@ Note: You may need to run *rbenv rehash*
 
 Add this to your Gemfile
 ```
-gem 'dynamic-dynamodb-manager', :git => "git@github.com:acquia/dynamic-dynamodb-manager.git"
+gem 'dynamic-dynamodb-manager', :git => "git@github.com:winkapp/dynamic-dynamodb-manager.git"
 
 ```
 
 Then run bundle install.
-
-@todo
 
 ## Usage
 
@@ -63,16 +58,13 @@ This will give you an overview of the commands
 dynamic-dynamodb-manager-cli rotate '/tmp/testing.conf' --no-deletion
 ```
 This command will take the API resource, consume it and make sure that the tables in your API resource exist. If they do not exist it will create it. It will expand the list of tables to create based on the rotation scheme. The tables that do not exist in the rotation scheme will be dropped. 
-Add the option --no-table-drop to the command line to not delete any tables.
+Add the option `--no-deletion` to the command line to not delete any tables.
 This command will also write the Dynamic DynamoDB configuration file. There is an ERB that we will update to allow more options. For now, this is sufficient to what we need. 
 
-Note: By default it does NOT purge the old tables. It will create new ones.
-
 ```
-dynamic-dynamodb-manager-cli rotate '/etc/dynamic-dynamodb/dynamic-dynamodb.conf' --no-deletion && service dynamic-dynamodb restart
+dynamic-dynamodb-manager-cli rotate --deletion
 ```
-Use above command when you are sure you can afford deletion of tables.
-This will also restart the dynamic dynamodb service you have installed.
+Use above command when you are sure you can afford deletion of tables and do not need a Dynamic DynamoDB config file.
 
 ## Use environment variables as your friend
 
@@ -109,9 +101,9 @@ bundle exec dynamic-dynamodb-manager-cli
 ```
 
 ## Running tests
+* Start up a local DynamoDB (see: http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
+* bundle exec rspec spec/
 
-* bundle exec rake fake_dynamo &
-* bundle exec rake test
 
 ## API structure to consume.
 
@@ -153,4 +145,3 @@ RotationScheme accepts the following values: daily, weekly, monthly.
             }
         }
     ]
-@todo

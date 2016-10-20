@@ -1,0 +1,158 @@
+[
+    {
+        "TableName" : "activities",
+        "RotationScheme" : "monthly",
+        "PurgeRotation" : 3,
+        "Properties" : {
+            "AttributeDefinitions" : [
+                {
+                    "AttributeName" : "activity_uuid",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "actor_uuid",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "created_at",
+                    "AttributeType" : "N"
+                },
+                {
+                    "AttributeName" : "object_uuid",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "range_composite",
+                    "AttributeType" : "S"
+                }
+            ],
+            "KeySchema" : [
+                {
+                    "AttributeName" : "object_uuid",
+                    "KeyType" : "HASH"
+                },
+                {
+                    "AttributeName" : "range_composite",
+                    "KeyType" : "RANGE"
+                }
+            ],
+            "LocalSecondaryIndexes": [
+                {
+                    "IndexName": "CreatedAtIndex",
+                    "KeySchema": [
+                        {
+                            "AttributeName": "object_uuid",
+                            "KeyType": "HASH"
+                        },
+                        {
+                            "AttributeName": "created_at",
+                            "KeyType": "RANGE"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "ALL"
+                    }
+                }
+            ],
+            "GlobalSecondaryIndexes": [
+                {
+                    "IndexName": "actor_uuid_created_at",
+                    "KeySchema": [
+                        {
+                            "AttributeName": "actor_uuid",
+                            "KeyType": "HASH"
+                        },
+                        {
+                            "AttributeName": "created_at",
+                            "KeyType": "RANGE"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "ALL"
+                    },
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 16384,
+                        "WriteCapacityUnits": 8192
+                    },
+                    "OutdatedTableProvisionedThroughput" : {
+                        "ReadCapacityUnits" : 8192,
+                        "WriteCapacityUnits" : 5
+                    }
+                }
+            ],
+            "StreamSpecification": {
+                "StreamEnabled": true,
+                "StreamViewType": "NEW_IMAGE"
+            },
+            "ProvisionedThroughput" : {
+                "ReadCapacityUnits" : 4096,
+                "WriteCapacityUnits" : 8192
+            },
+            "OutdatedTableProvisionedThroughput" : {
+                "ReadCapacityUnits" : 2048,
+                "WriteCapacityUnits" : 5
+            }
+        }
+    },
+    {
+        "TableName" : "readings",
+        "RotationScheme" : "monthly",
+        "PurgeRotation" : 3,
+        "Properties" : {
+            "AttributeDefinitions" : [
+                {
+                    "AttributeName" : "created_at",
+                    "AttributeType" : "N"
+                },
+                {
+                    "AttributeName" : "object_uuid",
+                    "AttributeType" : "S"
+                },
+                {
+                    "AttributeName" : "range_composite",
+                    "AttributeType" : "S"
+                }
+            ],
+            "KeySchema" : [
+                {
+                    "AttributeName" : "object_uuid",
+                    "KeyType" : "HASH"
+                },
+                {
+                    "AttributeName" : "range_composite",
+                    "KeyType" : "RANGE"
+                }
+            ],
+            "LocalSecondaryIndexes": [
+                {
+                    "IndexName": "CreatedAtIndex",
+                    "KeySchema": [
+                        {
+                            "AttributeName": "object_uuid",
+                            "KeyType": "HASH"
+                        },
+                        {
+                            "AttributeName": "created_at",
+                            "KeyType": "RANGE"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "ALL"
+                    }
+                }
+            ],
+            "StreamSpecification": {
+                "StreamEnabled": true,
+                "StreamViewType": "NEW_IMAGE"
+            },
+            "ProvisionedThroughput" : {
+                "ReadCapacityUnits" : 6144,
+                "WriteCapacityUnits" : 24576
+            },
+            "OutdatedTableProvisionedThroughput" : {
+                "ReadCapacityUnits" : 3000,
+                "WriteCapacityUnits" : 5
+            }
+        }
+    }
+]

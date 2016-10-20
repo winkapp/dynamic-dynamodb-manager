@@ -6,18 +6,21 @@ require 'dynamic_dynamodb_manager'
 task :default => [:test]
 
 task :test do
-  sh("bundle exec rspec spec/")
+    `bundle exec rspec spec/`
 end
 
-task :fake_dynamo do
-  sh("fake_dynamo --port 4567 --db /tmp/"+ENV['USER']+"/db.fdb")
+task :local_dynamo do
+    # fake_dynamo is no longer maintained (https://github.com/ananthakumaran/fake_dynamo)
+    # Use DynamoDB Local instaed (http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
+    # sh("fake_dynamo --port 4567 --db /tmp/#{ENV['USER']}/db.fdb")
+    `java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -port 4567 -inMemory`
 end
 
 # Setup the necessary gems, specified in the gemspec.
 begin
-  Bundler.setup(:default, :development)
+    Bundler.setup(:default, :development)
 rescue Bundler::BundlerError => e
-  $stderr.puts e.message
-  $stderr.puts "Run `bundle install` to install missing gems"
-  exit e.status_code
+    $stderr.puts e.message
+    $stderr.puts 'Run `bundle install` to install missing gems'
+    exit e.status_code
 end

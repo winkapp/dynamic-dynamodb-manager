@@ -2,37 +2,47 @@
 require 'thor'
 require 'bundler'
 
-cur_dir  = File.dirname(__FILE__)
-require cur_dir+"/../lib/dynamic_dynamodb_manager.rb"
-require cur_dir+"/../lib/dynamodb_cleanup.rb"
+cur_dir = File.dirname(__FILE__)
+require "#{cur_dir}/../lib/dynamic_dynamodb_manager.rb"
+require "#{cur_dir}/../lib/dynamodb_cleanup.rb"
 
 class DynamicDynamoDBCLI < Thor
 
-  desc 'rotate', 'Makes sure all tables exist in DynamoDB and drops those that are no longer required based on the rotation schemes'
-  option :deletion, :type => :boolean
-    def rotate(path)
-      @manager = DynamicDynamoDBManager.new
-      # create all new tables
-      puts "Creating required tables"
-      @manager.create_dynamodb_tables
-      if options[:deletion]
-        # remove all old tables
-        puts "Removing tables which are no longer needed according to the rotation scheme"
-        @manager.cleanup_tables
-      else
-        puts "Not deleting any table because you told me to skip deletions..."
-      end
-      @manager.write_dynamic_dynamodb_config(path)
-      puts "wrote the Dynamic DynamoDB config file to #{path}"
+    desc 'rotate', 'Makes sure all tables exist in DynamoDB and drops those that are no longer required based on the rotation schemes'
+    option :deletion, :type => :boolean, :default => false, :desc => 'Delete old tables (Default: false)'
+
+    def rotate(path=nil)
+        @manager = DynamicDynamoDBManager.new
+        # create all new tables
+        puts 'Creating required tables'
+        @manager.create_tables
+
+        # Update provisioned throughput capacity on tables
+        puts 'Updating tables throughput'
+        @manager.update_tables
+
+        if options[:deletion]
+            # remove all old tables
+            puts 'Removing tables which are no longer needed according to the rotation scheme'
+            # @manager.cleanup_tables
+        else
+            puts 'Not deleting any table because you told me to skip deletions...'
+        end
+
+        # Write Config if a path is provided
+        unless path.nil?
+            @manager.write_dynamic_dynamodb_config(path)
+            puts "wrote the Dynamic DynamoDB config file to #{path}"
+        end
     end
 
-  desc 'cleanup', 'Fetches all the stacks and cleans up all tables that are not part of an existing stack based on the stack environment parameter.'
-    def cleanup()
-      # Delete all tables from stacks that are no longer there
-      @cleanup = DynamoDbCleanup.new
-      @cleanup.get_all_environments
-      @cleanup.delete_unknown_tables
-    end
+    # desc 'cleanup', 'Fetches all the stacks and cleans up all tables that are not part of an existing stack based on the stack environment parameter.'
+    # def cleanup
+    #     # Delete all tables from stacks that are no longer there
+    #     @cleanup = DynamoDbCleanup.new
+    #     @cleanup.get_all_environments
+    #     @cleanup.delete_unknown_tables
+    # end
 end
 
 DynamicDynamoDBCLI.start(ARGV)

@@ -2,7 +2,7 @@
     {
         "TableName" : "daily-purge2",
         "RotationScheme" : "daily",
-        "PurgeRotation" : "2",
+        "PurgeRotation" : 2,
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -26,19 +26,19 @@
 
             ],
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "600"
+                "ReadCapacityUnits" : 50,
+                "WriteCapacityUnits" : 600
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "30"
+                "ReadCapacityUnits" : 5,
+                "WriteCapacityUnits" : 30
             }
         }
     },
     {
         "TableName" : "weekly-purge2",
         "RotationScheme" : "weekly",
-        "PurgeRotation" : "2",
+        "PurgeRotation" : 2,
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -61,19 +61,19 @@
                 }
             ],
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "600"
+                "ReadCapacityUnits" : 50,
+                "WriteCapacityUnits" : 600
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "30"
+                "ReadCapacityUnits" : 5,
+                "WriteCapacityUnits" : 30
             }
         }
     },
     {
         "TableName" : "monthly-purge4",
         "RotationScheme" : "monthly",
-        "PurgeRotation" : "4",
+        "PurgeRotation" : 4,
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -95,20 +95,46 @@
                     "KeyType" : "RANGE"
                 }
             ],
+            "GlobalSecondaryIndexes": [
+                {
+                    "IndexName": "GSIndexName",
+                    "KeySchema": [
+                        {
+                            "AttributeName": "SessionId",
+                            "KeyType": "HASH"
+                        },
+                        {
+                            "AttributeName": "Timestamp",
+                            "KeyType": "RANGE"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "ALL"
+                    },
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 500,
+                        "WriteCapacityUnits": 1000
+                    },
+                    "OutdatedTableProvisionedThroughput" : {
+                        "ReadCapacityUnits" : 5,
+                        "WriteCapacityUnits" : 1
+                    }
+                }
+            ],
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "600"
+                "ReadCapacityUnits" : 50,
+                "WriteCapacityUnits" : 600
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "30"
+                "ReadCapacityUnits" : 5,
+                "WriteCapacityUnits" : 30
             }
         }
     },
     {
         "TableName" : "daily-nopurge",
         "RotationScheme" : "daily",
-        "PurgeRotation" : "-1",
+        "PurgeRotation" : -1,
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -132,15 +158,15 @@
 
             ],
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "5"
+                "ReadCapacityUnits" : 50,
+                "WriteCapacityUnits" : 5
             }
         }
     },
     {
         "TableName" : "norotation",
         "RotationScheme" : "none",
-        "PurgeRotation" : "-1",
+        "PurgeRotation" : -1,
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -164,8 +190,8 @@
 
             ],
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : "5",
-                "WriteCapacityUnits" : "5"
+                "ReadCapacityUnits" : 50,
+                "WriteCapacityUnits" : 5
             }
         }
     }
