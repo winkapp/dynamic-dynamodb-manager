@@ -8,8 +8,10 @@ require 'open-uri'
 require 'date'
 
 ENV['RACK_ENV'] ||= 'test'
-puts "Loading with environment #{ENV['RACK_ENV']}"
-Dotenv.load("../#{ENV['RACK_ENV']}.env")
+unless ENV['RACK_ENV'].equal?('production')
+   puts "Loading with environment #{ENV['RACK_ENV']}"
+    Dotenv.load("../#{ENV['RACK_ENV']}.env")
+end
 
 if ENV['BUGSNAG_APIKEY']
     require 'bugsnag'
@@ -32,29 +34,27 @@ class DynamicDynamoDBManager
 
     def initialize(aws_config = nil)
 
-        # Setup default configs using dotenv libraries
-        ENV['DYNAMODB_ENDPOINT'] ||= 'localhost'
-        ENV['DYNAMODB_PORT'] ||= '4567'
-
         ENV['AWS_ACCESS_KEY'] ||= '00000'
         ENV['AWS_SECRET_ACCESS_KEY'] ||= '00000'
-        # ENV['DYNAMODB_API_VERSION'] ||= '2012-08-10'
-        ENV['DYNAMODB_USE_SSL'] ||= '0'
-        ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
-        ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '5'
-
-        protocol = 'http'
-        if ENV['DYNAMODB_USE_SSL'] == '1'
-            protocol += 's'
-        end
-        endpoint = "#{protocol}://#{ENV['DYNAMODB_ENDPOINT']}:#{ENV['DYNAMODB_PORT']}"
-
-        # :api_version => ENV['DYNAMODB_API_VERSION'],
-        # :use_ssl => ENV['DYNAMODB_USE_SSL'] == 1
         default_configs = {
-            :endpoint => endpoint,
             :access_key_id => ENV['AWS_ACCESS_KEY'].to_s,
-            :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY'].to_s}
+            :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY'].to_s
+        }
+        unless ENV['RACK_ENV'].equal?('production')
+            # Setup default configs using dotenv libraries
+            ENV['DYNAMODB_ENDPOINT'] ||= 'localhost'
+            ENV['DYNAMODB_PORT'] ||= '4567'
+            ENV['DYNAMODB_USE_SSL'] ||= '0'
+            ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
+            ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '5'
+
+            protocol = 'http'
+            if ENV['DYNAMODB_USE_SSL'] == '1'
+                protocol += 's'
+            end
+            endpoint = "#{protocol}://#{ENV['DYNAMODB_ENDPOINT']}:#{ENV['DYNAMODB_PORT']}"
+            default_configs.update({:endpoint => endpoint})
+        end
 
         if aws_config.nil? || aws_config.empty?
             options = default_configs
@@ -64,7 +64,6 @@ class DynamicDynamoDBManager
 
         # Add some static caching. We know we don't need to ask AWS too much more after initialization.
         Aws.config = options
-        # :api_version => ENV['DYNAMODB_API_VERSION']
         @dynamo_client = Aws::DynamoDB::Client.new
         @dynamodb_required_tables = get_all_required_tables
         @dynamodb_tables = get_all_tables
@@ -115,7 +114,8 @@ class DynamicDynamoDBManager
     end
 
     def delete_table(table_name)
-        dynamo_client.delete_table({table_name: table_name})
+        puts "Would delete table: #{table_name}"
+        # dynamo_client.delete_table({table_name: table_name})
     end
 
     def get_all_required_tables(refresh = false)
