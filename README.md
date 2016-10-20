@@ -101,8 +101,8 @@ bundle exec dynamic-dynamodb-manager-cli
 ```
 
 ## Running tests
-* Start up a local DynamoDB (see: http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
-* bundle exec rspec spec/
+* Start up a [Local DynamoDB](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
+* `bundle exec rspec spec/`
 
 
 ## API structure to consume.
