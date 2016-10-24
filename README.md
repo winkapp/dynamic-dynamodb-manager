@@ -69,23 +69,23 @@ Use above command when you are sure you can afford deletion of tables and do not
 
 List of environment variables that can be changed
 
-* DYNAMODB_ENDPOINT=localhost
+* `DYNAMODB_ENDPOINT=localhost`  
 Where to go to for Dynamo. Use rake fake_dynamo to spin up a local version of dynamodb to test against.
-* DYNAMODB_PORT=4567
+* `DYNAMODB_PORT=4567`  
 DynamoDB port
-* AWS_ACCESS_KEY='00000'
+* `AWS_ACCESS_KEY='00000'`  
 AWS Access key to access your DynamoDB instance
-* AWS_SECRET_ACCESS_KEY='00000'
+* `AWS_SECRET_ACCESS_KEY='00000'`  
 AWS Secret Access key to access your DynamoDB instance
-* DYNAMODB_USE_SSL=0
+* `DYNAMODB_USE_SSL=0`  
 I'm not entirely sure if this works properly. But it is possible.
-* API_TABLE_RESOURCE='http://testing.com/v1/system/tables'
+* `API_TABLE_RESOURCE='http://testing.com/v1/system/tables'`  
 The source of your json feed. This could either be a local file or a remote file. We use S3 files that we read. 
 If the file can't be read. The application will error out.
-* `REDIS_URL='redis://redis:PASS@HOST:PORT'`
+* `REDIS_URL='redis://USER:PASS@HOST:PORT'`  
 The URL of the Redis instance to update with the current and previous DynamoDB Table names.  
 This sets `PRIMARY_DYNAMODB_TABLE` to the current table and `SECONDARY_DYNAMODB_TABLE` to the name of the previous month/week/day table.   
-* BUGSNAG_APIKEY=
+* `BUGSNAG_APIKEY=`  
 The Gem supports BUGSNAG. The only thing you need to do is to add your BUGSNAG key to the environment variables
 and it will help you figure out where it fails and if it fails.
     
