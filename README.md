@@ -70,7 +70,7 @@ Use above command when you are sure you can afford deletion of tables and do not
 List of environment variables that can be changed
 
 * `DYNAMODB_ENDPOINT=localhost`  
-Where to go to for Dynamo. Use rake fake_dynamo to spin up a local version of dynamodb to test against.
+Where to go to for Dynamo. Use [Local DynamoDB](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html) to spin up a local version of dynamodb to test against.
 * `DYNAMODB_PORT=4567`  
 DynamoDB port
 * `AWS_ACCESS_KEY='00000'`  
