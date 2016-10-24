@@ -8,7 +8,7 @@ describe DynamicDynamoDBManager do
     before do
         puts 'Creating all dynamoDB tables from an API list. Use December to test a new year'
         Timecop.freeze Date.new(2014, 12, 24) do
-            @manager = DynamicDynamoDBManager.new
+            @manager = DynamicDynamoDBManager.new  # (verbose: true)
             @manager.get_all_required_tables(true)
             @manager.get_all_tables(true)
             @manager.create_tables
@@ -51,6 +51,39 @@ describe DynamicDynamoDBManager do
         end
     end
 
+    it 'sets primary and secondary redis keys' do
+        Timecop.freeze Date.new(2014, 12, 24) do
+            # Refresh tables
+            @manager.get_all_tables(true)
+            tables = @manager.get_all_required_tables(true)
+
+            primaries = %W(#{rack_env}.daily-purge2.20141224 #{rack_env}.daily-nopurge.20141224 #{rack_env}.weekly-purge2.20141222 #{rack_env}.monthly-purge4.20141201)
+            secondaries = %W(#{rack_env}.daily-purge2.20141223 #{rack_env}.daily-nopurge.20141223 #{rack_env}.weekly-purge2.20141215 #{rack_env}.monthly-purge4.20141101)
+            tables.each do |table|
+                table_name = table['TableName']
+                if primaries.include?(table_name)
+                    expect(table).to include('PRIMARY_DYNAMODB_TABLE')
+                    expect(table['PRIMARY_DYNAMODB_TABLE']).to be true
+                    expect(table).to_not include('SECONDARY_DYNAMODB_TABLE')
+                elsif secondaries.include?(table_name)
+                    expect(table).to include('SECONDARY_DYNAMODB_TABLE')
+                    expect(table['SECONDARY_DYNAMODB_TABLE']).to be true
+                    expect(table).to_not include('PRIMARY_DYNAMODB_TABLE')
+                else
+                    if table_name.eql?("#{rack_env}.norotation")
+                        expect(table).to include('PRIMARY_DYNAMODB_TABLE')
+                        expect(table['PRIMARY_DYNAMODB_TABLE']).to be true
+                        expect(table).to include('SECONDARY_DYNAMODB_TABLE')
+                        expect(table['SECONDARY_DYNAMODB_TABLE']).to be true
+                    else
+                        expect(table).to_not include('PRIMARY_DYNAMODB_TABLE')
+                        expect(table).to_not include('SECONDARY_DYNAMODB_TABLE')
+                    end
+                end
+            end
+        end
+    end
+
     it 'sets the throughput to values that are cost-effective' do
         Timecop.freeze Date.new(2014, 12, 24) do
             # Refresh tables
@@ -58,60 +91,26 @@ describe DynamicDynamoDBManager do
             tables = @manager.get_all_required_tables(true)
 
             # Daily rotation for 20141224, and 20141225 should be set higher than any other table for the same prefix
+            #
+            # Weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
+            # the week after, 20141229 should be set lower
+            #
+            # Monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+            # the month after, 20150101 should be set lower
+            high_tp = %W(#{rack_env}.daily-purge2.20141224 #{rack_env}.daily-purge2.20141225 #{rack_env}.weekly-purge2.20141222 #{rack_env}.monthly-purge4.20141201)
+            low_tp = %W(#{rack_env}.daily-purge2.20141223 #{rack_env}.weekly-purge2.20141215 #{rack_env}.weekly-purge2.20141229 #{rack_env}.monthly-purge4.20140901 #{rack_env}.monthly-purge4.20141001 #{rack_env}.monthly-purge4.20141101 #{rack_env}.monthly-purge4.20150101)
+
             tables.each do |table|
                 table_name = table['TableName']
                 write_cap = table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']
                 read_cap = table['Properties']['ProvisionedThroughput']['ReadCapacityUnits']
 
-                if table_name === "#{rack_env}.daily-purge2.20141223"
+                if low_tp.include?(table_name)
                     expect(read_cap).to eq(5)
                     expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20141224"
+                elsif high_tp.include?(table_name)
                     expect(read_cap).to eq(50)
                     expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20141225"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-
-                # weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
-                # the week after, 20141229 should be set lower
-                if table_name === "#{rack_env}.weekly-purge2.20141215"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20141222"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20141229"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-
-                # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
-                # the month after, 20150101 should be set lower
-                if table_name === "#{rack_env}.monthly-purge4.20140901"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141001"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141101"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141201"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20150101"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
                 end
             end
         end
@@ -121,61 +120,27 @@ describe DynamicDynamoDBManager do
             @manager.get_all_tables(true)
             tables = @manager.get_all_required_tables(true)
 
+            # Daily rotation for 20141228, and 20141229 should be set higher than any other table for the same prefix
+            #
+            # weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
+            # the week after, 20141229 should also be set higher
+            #
+            # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+            # the month after, 20150101 should be set lower
+            low_tp = %W(#{rack_env}.daily-purge2.20141227 #{rack_env}.weekly-purge2.20141215 #{rack_env}.monthly-purge4.20140901 #{rack_env}.monthly-purge4.20141001 #{rack_env}.monthly-purge4.20141101 #{rack_env}.monthly-purge4.20150101)
+            high_tp = %W(#{rack_env}.daily-purge2.20141228 #{rack_env}.daily-purge2.20141229 #{rack_env}.weekly-purge2.20141222 #{rack_env}.weekly-purge2.20141229 #{rack_env}.monthly-purge4.20141201)
+
             tables.each do |table|
                 table_name = table['TableName']
                 write_cap = table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']
                 read_cap = table['Properties']['ProvisionedThroughput']['ReadCapacityUnits']
 
-                # Daily rotation for 20141228, and 20141229 should be set higher than any other table for the same prefix
-                if table_name === "#{rack_env}.daily-purge2.20141227"
+                if low_tp.include?(table_name)
                     expect(read_cap).to eq(5)
                     expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20141228"
+                elsif high_tp.include?(table_name)
                     expect(read_cap).to eq(50)
                     expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20141229"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-
-                # weekly rotation with date 20141222 should be set higher than any other table for the same prefix.
-                # the week after, 20141229 should also be set higher
-                if table_name === "#{rack_env}.weekly-purge2.20141215"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20141222"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20141229"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-
-                # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
-                # the month after, 20150101 should be set lower
-                if table_name === "#{rack_env}.monthly-purge4.20140901"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141001"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141101"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141201"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20150101"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
                 end
             end
         end
@@ -185,59 +150,25 @@ describe DynamicDynamoDBManager do
             @manager.get_all_tables(true)
             tables = @manager.get_all_required_tables(true)
 
+            # Daily rotation for 20141231, and 20150101 should be set higher than any other table for the same prefix
+            #
+            # weekly rotation with date 20141229 should be set higher than any other table for the same prefix.
+            # the week after, 20150105 should be set lower
+            #
+            # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
+            # the month after, 20150101 should also be set higher
+            low_tp = %W(#{rack_env}.daily-purge2.20141230 #{rack_env}.weekly-purge2.20141222 #{rack_env}.weekly-purge2.20150105 #{rack_env}.monthly-purge4.20140901 #{rack_env}.monthly-purge4.20141001 #{rack_env}.monthly-purge4.20141101)
+            high_tp = %W(#{rack_env}.daily-purge2.20141231 #{rack_env}.daily-purge2.20150101 #{rack_env}.weekly-purge2.20141229 #{rack_env}.monthly-purge4.20141201 #{rack_env}.monthly-purge4.20150101)
+
             tables.each do |table|
                 table_name = table['TableName']
                 write_cap = table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']
                 read_cap = table['Properties']['ProvisionedThroughput']['ReadCapacityUnits']
 
-                # Daily rotation for 20141231, and 20150101 should be set higher than any other table for the same prefix
-                if table_name === "#{rack_env}.daily-purge2.20141230"
+                if low_tp.include?(table_name)
                     expect(read_cap).to eq(5)
                     expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20141231"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.daily-purge2.20150101"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-
-                # weekly rotation with date 20141229 should be set higher than any other table for the same prefix.
-                # the week after, 20150105 should be set lower
-                if table_name === "#{rack_env}.weekly-purge2.20141222"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20141229"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.weekly-purge2.20150105"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-
-                # monthly rotation with date 20141201 should be set higher than any other table for the same prefix.
-                # the month after, 20150101 should also be set higher
-                if table_name === "#{rack_env}.monthly-purge4.20140901"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141001"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141101"
-                    expect(read_cap).to eq(5)
-                    expect(write_cap).to eq(30)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20141201"
-                    expect(read_cap).to eq(50)
-                    expect(write_cap).to eq(600)
-                end
-                if table_name === "#{rack_env}.monthly-purge4.20150101"
+                elsif high_tp.include?(table_name)
                     expect(read_cap).to eq(50)
                     expect(write_cap).to eq(600)
                 end
@@ -608,7 +539,7 @@ describe DynamicDynamoDBManager do
             expect(tables).to include("#{rack_env}.norotation")
 
             # Daily with rotate 2 means 1 day ahead and 2 behind
-            puts tables
+            # puts tables
             expect(tables).to_not include("#{rack_env}.daily-purge2.20140902")
             expect(tables).to_not include("#{rack_env}.daily-purge2.20140901")
             expect(tables).to_not include("#{rack_env}.daily-purge2.20140831")
@@ -634,16 +565,15 @@ describe DynamicDynamoDBManager do
         end
     end
 
-    it 'returns a an empty list after deleting all tables' do
+    it 'returns an empty list after deleting all tables' do
         Timecop.freeze Date.new(2014, 12, 24) do
             tables = @manager.get_all_required_tables(true)
-            tables.each { |t|
-                params = {table_name: t['TableName']}
-                puts "Deleting table #{t['TableName']}."
-                @manager.dynamo_client.delete_table(params)
-            }
+            tables.each do |t|
+                @manager.delete_table(t['TableName'])
+            end
+            all_tables = @manager.get_all_tables(true)
             tables.each do |table|
-                expect(@manager.get_all_tables(true)).to_not include(table['TableName'])
+                expect(all_tables).to_not include(table['TableName'])
             end
         end
     end

@@ -6,11 +6,13 @@ require 'dotenv'
 require 'pp'
 require 'open-uri'
 require 'date'
+require 'redis'
+
 
 ENV['RACK_ENV'] ||= 'test'
-unless ENV['RACK_ENV'].equal?('production')
+if File.file?("../#{ENV['RACK_ENV']}.env")
    puts "Loading with environment #{ENV['RACK_ENV']}"
-    Dotenv.load("../#{ENV['RACK_ENV']}.env")
+   Dotenv.load("../#{ENV['RACK_ENV']}.env")
 end
 
 if ENV['BUGSNAG_APIKEY']
@@ -31,8 +33,9 @@ class DynamicDynamoDBManager
     attr_accessor :api_tables
     attr_accessor :dynamodb_required_tables
     attr_accessor :dynamodb_tables
+    attr_accessor :verbose
 
-    def initialize(aws_config = nil)
+    def initialize(aws_config: nil, verbose: false)
 
         ENV['AWS_ACCESS_KEY'] ||= '00000'
         ENV['AWS_SECRET_ACCESS_KEY'] ||= '00000'
@@ -40,7 +43,8 @@ class DynamicDynamoDBManager
             :access_key_id => ENV['AWS_ACCESS_KEY'].to_s,
             :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY'].to_s
         }
-        unless ENV['RACK_ENV'].equal?('production')
+
+        if ENV['RACK_ENV'].eql? 'test'
             # Setup default configs using dotenv libraries
             ENV['DYNAMODB_ENDPOINT'] ||= 'localhost'
             ENV['DYNAMODB_PORT'] ||= '4567'
@@ -67,6 +71,8 @@ class DynamicDynamoDBManager
         @dynamo_client = Aws::DynamoDB::Client.new
         @dynamodb_required_tables = get_all_required_tables
         @dynamodb_tables = get_all_tables
+
+        @verbose = verbose
     end
 
     def get_all_tables(refresh = false, include_other = false)
@@ -82,7 +88,7 @@ class DynamicDynamoDBManager
                     data_more[:exclusive_start_table_name] = tables_data[:last_evaluated_table_name]
                 end
                 tables_data = dynamo_client.list_tables(data_more)
-                tables = tables + tables_data[:table_names]
+                tables += tables_data[:table_names]
                 if tables_data[:last_evaluated_table_name].nil?
                     break
                 end
@@ -114,8 +120,10 @@ class DynamicDynamoDBManager
     end
 
     def delete_table(table_name)
-        puts "Would delete table: #{table_name}"
-        # dynamo_client.delete_table({table_name: table_name})
+        if @verbose
+            puts "Deleting table: #{table_name}"
+        end
+        dynamo_client.delete_table({table_name: table_name})
     end
 
     def get_all_required_tables(refresh = false)
@@ -147,6 +155,8 @@ class DynamicDynamoDBManager
                         # stack.tablename
                         temp_table = Marshal.load(Marshal.dump(table))
                         temp_table['TableName'] = "#{environment}.#{table_name}"
+                        temp_table['PRIMARY_DYNAMODB_TABLE'] = true
+                        temp_table['SECONDARY_DYNAMODB_TABLE'] = true
                         tables << temp_table
                     when 'daily'
                         # syntax
@@ -164,7 +174,12 @@ class DynamicDynamoDBManager
 
                             # if Throughput limitations are given, the first two iterations get TableProvisionedThroughput.
                             # the latter get the OutdatedTableProvisionedThroughput
-                            if i > 2
+                            if i == 2
+                                temp_table['PRIMARY_DYNAMODB_TABLE'] = true
+                            elsif i > 2
+                                if i == 3
+                                    temp_table['SECONDARY_DYNAMODB_TABLE'] = true
+                                end
                                 if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
                                     temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
                                 end
@@ -213,9 +228,14 @@ class DynamicDynamoDBManager
                                         }
                                     end
                                 end
-                            end
-                            # everything except current week
-                            unless day_count.eql? 14
+                            elsif day_count.eql? 14
+                                # This is current week
+                                temp_table['PRIMARY_DYNAMODB_TABLE'] = true
+                            else
+                                # This is everything prior to current week
+                                if day_count.eql? 21
+                                    temp_table['SECONDARY_DYNAMODB_TABLE'] = true
+                                end
                                 unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m%d')
                                     if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
                                         temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
@@ -249,17 +269,24 @@ class DynamicDynamoDBManager
                             # Forced to 01 as we always want the first of the month
                             temp_table['TableName'] = "#{environment}.#{table_name}.#{table_prefix.strftime('%Y%m01')}"
 
+                            tomorrow = Date.today + 1
                             # since we always do one month in the future. Month with i equal to 1 is our current month.
                             # Month 0 is the future month and only if the date of that new month is tomorrow, it will get
                             # the updated ProvisionedThroughput
-                            unless (months - i).eql? 1
-                                # if Throughput limitations are given, the first month gets the ProvisionedThroughput and the day before
-                                # the next month is active, it will also receive the ProvisionedThroughput.
-                                # everything else gets the OutdatedTableProvisionedThroughput
-                                tomorrow = Date.today + 1
-
-                                # TODO: change 19 to 01
+                            if (months - i).eql? 1
+                                # Current Month
+                                # Set redis env var for PRIMARY_DYNAMODB_TABLE to temp_table['TableName']
+                                temp_table['PRIMARY_DYNAMODB_TABLE'] = true
+                            else
+                                if (months - i).eql? 2
+                                    # Previous Month
+                                    # Set redis env var for SECONDARY_DYNAMODB_TABLE to temp_table['TableName']
+                                    temp_table['SECONDARY_DYNAMODB_TABLE'] = true
+                                end
                                 unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m01')
+                                    # if Throughput limitations are given, the first month gets the ProvisionedThroughput and the day before
+                                    # the next month is active, it will also receive the ProvisionedThroughput.
+                                    # everything else gets the OutdatedTableProvisionedThroughput
                                     if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
                                         temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
                                     end
@@ -285,12 +312,18 @@ class DynamicDynamoDBManager
     end
 
     def create_tables
+        unless ENV['RACK_ENV'].eql? 'test'
+            lambda_client = Aws::Lambda::Client.new
+        end
+
         tables = @dynamodb_required_tables
         tables.each do |table|
             table_name = table['TableName']
             # Do not create tables that already exist
             if @dynamodb_tables.include?(table_name)
-                puts "#{table_name} already exists. Skipping..."
+                if @verbose
+                    puts "#{table_name} already exists.  Not creating..."
+                end
             else
                 attribute_definitions = Array.new
                 table['Properties']['AttributeDefinitions'].each do |ad|
@@ -386,22 +419,45 @@ class DynamicDynamoDBManager
                     new_table_params[:stream_specification] = stream_specification
                 end
 
-                puts "Creating #{table_name}..."
-                dynamo_client.create_table(new_table_params)
+                if @verbose
+                    puts "Creating #{table_name}..."
+                end
+
+                create_response = dynamo_client.create_table(new_table_params)
+                unless ENV['RACK_ENV'].eql? 'test'
+                    if table.include?('StreamLambda')
+                        func_name = table['StreamLambda']['FunctionName']
+                        stream_arn = create_response.table_description.latest_stream_arn
+                        if @verbose
+                            puts "Adding source mapping to lambda #{func_name} for stream #{stream_arn}..."
+                        end
+                        lambda_client.create_event_source_mapping({
+                            event_source_arn: stream_arn,
+                            function_name: func_name,
+                            enabled: table['StreamLambda']['Enabled'],
+                            batch_size: table['StreamLambda']['BatchSize'],
+                            starting_position: table['StreamLambda']['StartingPosition'],
+                        })
+                    end
+                end
+
                 # Sleep for N seconds so that we give AWS some time to create the table
                 sleep_intv = ENV['DYNAMODB_SLEEP_INTERVAL']
-                puts "Sleeping for #{sleep_intv} seconds for AWS limit purposes."
+                if @verbose
+                    puts "Sleeping for #{sleep_intv} seconds for AWS limit purposes."
+                end
                 sleep sleep_intv.to_f
             end
         end
     end
 
     def update_tables
+        all_tables = get_all_tables(true)
         tables = get_all_required_tables(true)
         tables.each do |table|
             table_name = table['TableName']
-            # Do not create tables that already exist
-            if @dynamodb_tables.include?(table_name)
+            # Do not update tables that do not exist
+            if all_tables.include?(table_name)
                 table_info = dynamo_client.describe_table({:table_name => table_name})
 
                 # table_scheme = get_table_scheme(table_name)
@@ -411,9 +467,13 @@ class DynamicDynamoDBManager
                 actual_write_cap = table_info.table[:provisioned_throughput][:write_capacity_units]
 
                 if scheme_read_cap.eql?(actual_read_cap) and scheme_write_cap.eql?(actual_write_cap)
-                    puts "No update needed for #{table_name} table throughput capacity"
+                    if @verbose
+                        puts "No update needed for #{table_name} table throughput capacity"
+                    end
                 else
-                    puts "Updating #{table_name} table throughput capacity"
+                    if @verbose
+                        puts "Updating #{table_name} table throughput capacity"
+                    end
                     params = {
                         :table_name => table_name,
                         :provisioned_throughput => {
@@ -451,9 +511,13 @@ class DynamicDynamoDBManager
                         end
                     end
                     if new_gsis.empty?
-                        puts "No update needed for #{table_name} GSI throughput capacity"
+                        if @verbose
+                            puts "No update needed for #{table_name} GSI throughput capacity"
+                        end
                     else
-                        puts "Updating #{table_name} GSI throughput capacity"
+                        if @verbose
+                            puts "Updating #{table_name} GSI throughput capacity"
+                        end
                         params = {
                             :table_name => table_name,
                             :global_secondary_index_updates => new_gsis
@@ -461,9 +525,34 @@ class DynamicDynamoDBManager
                         dynamo_client.update_table(params)
                     end
                 end
-
             else
-                puts "Table #{table_name} does not exist.  Create it first!"
+                if @verbose
+                    puts "Table '#{table_name}' does not exist."
+                end
+            end
+        end
+    end
+
+    def update_redis
+        redis_client = Redis.new(url: ENV['REDIS_URL'])
+        tables = get_all_required_tables(true)
+        tables.each do |table|
+            table_name = table['TableName']
+            if table.include? 'PRIMARY_DYNAMODB_TABLE' and table['PRIMARY_DYNAMODB_TABLE']
+                unless redis_client.get('PRIMARY_DYNAMODB_TABLE').eql?(table_name)
+                    if @verbose
+                        puts "Setting PRIMARY_DYNAMODB_TABLE env var to #{table_name}"
+                    end
+                    redis_client.set('PRIMARY_DYNAMODB_TABLE', table_name)
+                end
+            end
+            if table.include? 'SECONDARY_DYNAMODB_TABLE' and table['SECONDARY_DYNAMODB_TABLE']
+                unless redis_client.get('SECONDARY_DYNAMODB_TABLE').eql?(table_name)
+                    if @verbose
+                        puts "Setting SECONDARY_DYNAMODB_TABLE env var to #{table_name}"
+                    end
+                    redis_client.set('SECONDARY_DYNAMODB_TABLE', table_name)
+                end
             end
         end
     end
@@ -494,14 +583,18 @@ class DynamicDynamoDBManager
                         clean_tablename = table_name.split(/\./)[1]
                         table_scheme = get_table_scheme(clean_tablename)
                         if table_scheme['PurgeRotation'].to_i.equal?(-1)
-                            puts "Not deleting #{table_name}. Rotation was set to infinite."
+                            if @verbose
+                                puts "Not deleting #{table_name}. Rotation was set to infinite."
+                            end
                             # go to the next table
                             next
                         end
                     end
 
                     # Not known to us and also no infinite rotation
-                    puts "Deleting #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
+                    if @verbose
+                        puts "Deleting #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
+                    end
                     delete_table(table_name)
 
                     # Sleep for N seconds so that we give AWS some time to create the table

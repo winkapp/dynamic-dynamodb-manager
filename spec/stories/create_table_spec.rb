@@ -84,8 +84,7 @@ describe DynamicDynamoDBManager do
     end
 
     after do
-        params = {table_name: 'some-random-collection-one'}
-        @manager.dynamo_client.delete_table(params)
+        @manager.delete_table('some-random-collection-one')
     end
 
 end

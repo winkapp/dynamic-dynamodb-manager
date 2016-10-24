@@ -15,7 +15,6 @@ In each environment you are running this GEM you will need the following environ
     DYNAMODB_PORT=4567
     AWS_ACCESS_KEY='00000'
     AWS_SECRET_ACCESS_KEY='00000'
-    DYNAMODB_API_VERSION='2012-08-10'
     DYNAMODB_USE_SSL=0
     API_TABLE_RESOURCE='spec/support/fixtures/tables.json'
     BUGSNAG_APIKEY=
@@ -78,13 +77,14 @@ DynamoDB port
 AWS Access key to access your DynamoDB instance
 * AWS_SECRET_ACCESS_KEY='00000'
 AWS Secret Access key to access your DynamoDB instance
-* DYNAMODB_API_VERSION='2012-08-10'
-The version of DynamoDB API you want to use. Default is latest as of this writing.
 * DYNAMODB_USE_SSL=0
 I'm not entirely sure if this works properly. But it is possible.
 * API_TABLE_RESOURCE='http://testing.com/v1/system/tables'
 The source of your json feed. This could either be a local file or a remote file. We use S3 files that we read. 
 If the file can't be read. The application will error out.
+* `REDIS_URL='redis://redis:PASS@HOST:PORT'`
+The URL of the Redis instance to update with the current and previous DynamoDB Table names.  
+This sets `PRIMARY_DYNAMODB_TABLE` to the current table and `SECONDARY_DYNAMODB_TABLE` to the name of the previous month/week/day table.   
 * BUGSNAG_APIKEY=
 The Gem supports BUGSNAG. The only thing you need to do is to add your BUGSNAG key to the environment variables
 and it will help you figure out where it fails and if it fails.

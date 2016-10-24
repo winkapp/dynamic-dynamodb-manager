@@ -75,6 +75,10 @@
         "RotationScheme" : "monthly",
         "PurgeRotation" : 4,
         "Properties" : {
+            "StreamSpecification": {
+                "StreamEnabled": true,
+                "StreamViewType": "NEW_IMAGE"
+            },
             "AttributeDefinitions" : [
                 {
                     "AttributeName" : "SessionId",

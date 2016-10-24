@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.name        = 'dynamic-dynamodb-manager'
   s.version     = '0.0.1'
   s.date        = Date.today.to_s
-  s.summary     = 'Manages tables regarding DynamoDB and generates a new config for Dynamic DynamoDB'
+  s.summary     = 'Manages DynamoDB tables and streams'
   s.description = ''
   s.authors     = ['Jonathan Hosmer']
   s.email       = 'jonathan@wink.com'
@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'dotenv'
   s.add_dependency 'bugsnag'
   s.add_dependency 'io-console'
+  s.add_dependency 'redis'
   s.add_development_dependency 'rack-test'
   s.add_development_dependency 'timecop'
   s.add_development_dependency 'rspec'

@@ -3,6 +3,12 @@
         "TableName" : "activities",
         "RotationScheme" : "monthly",
         "PurgeRotation" : 3,
+        "StreamLambda": {
+            "FunctionName": "api_production_activities_ddb_to_firehose",
+            "BatchSize": 10000,
+            "StartingPosition": "TRIM_HORIZON",
+            "Enabled": true
+        },
         "Properties" : {
             "AttributeDefinitions" : [
                 {
@@ -98,6 +104,12 @@
         "TableName" : "readings",
         "RotationScheme" : "monthly",
         "PurgeRotation" : 3,
+        "StreamLambda": {
+            "FunctionName": "api_production_readings_ddb_to_firehose",
+            "BatchSize": 10000,
+            "StartingPosition": "TRIM_HORIZON",
+            "Enabled": true
+        },
         "Properties" : {
             "AttributeDefinitions" : [
                 {
