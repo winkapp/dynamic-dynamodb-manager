@@ -1,3 +1,4 @@
+require 'redis'
 require_relative '../../spec/spec_helper.rb'
 
 rack_env = ENV['RACK_ENV']
@@ -8,7 +9,7 @@ describe DynamicDynamoDBManager do
     before do
         puts 'Creating all dynamoDB tables from an API list. Use December to test a new year'
         Timecop.freeze Date.new(2014, 12, 24) do
-            @manager = DynamicDynamoDBManager.new  # (verbose: true)
+            @manager = DynamicDynamoDBManager.new(verbose: true)
             @manager.get_all_required_tables(true)
             @manager.get_all_tables(true)
             @manager.create_tables
@@ -55,30 +56,52 @@ describe DynamicDynamoDBManager do
         Timecop.freeze Date.new(2014, 12, 24) do
             # Refresh tables
             @manager.get_all_tables(true)
+
+            env_override = 'env_override_hash'
+            primary_field = 'PRIMARY_DYNAMODB_TABLE'
+            secondary_field = 'SECONDARY_DYNAMODB_TABLE'
+            redis_client = Redis.new(url: ENV['REDIS_URL'])
+            redis_client.hdel(env_override, redis_client.hkeys(env_override))
+            expect(redis_client.hlen(env_override)).to eql(0)
+
+            # Set Redis keys
+            @manager.update_redis
+
+            # Refresh and get tables
             tables = @manager.get_all_required_tables(true)
 
-            primaries = %W(#{rack_env}.daily-purge2.20141224 #{rack_env}.daily-nopurge.20141224 #{rack_env}.weekly-purge2.20141222 #{rack_env}.monthly-purge4.20141201)
-            secondaries = %W(#{rack_env}.daily-purge2.20141223 #{rack_env}.daily-nopurge.20141223 #{rack_env}.weekly-purge2.20141215 #{rack_env}.monthly-purge4.20141101)
+            primaries = %W(#{rack_env}.daily-purge2.20141224 #{rack_env}.daily-nopurge.20141224 #{rack_env}.weekly-purge2.20141222 #{rack_env}.monthly-purge4.20141201 #{rack_env}.norotation)
+            secondaries = %W(#{rack_env}.daily-purge2.20141223 #{rack_env}.daily-nopurge.20141223 #{rack_env}.weekly-purge2.20141215 #{rack_env}.monthly-purge4.20141101 #{rack_env}.norotation)
+
+            expect(redis_client.hlen(env_override)).to eql(primaries.length + secondaries.length)
+
             tables.each do |table|
                 table_name = table['TableName']
+                clean_tablename = table_name.split(/\./)[1].gsub(/[^\w]/, '_').upcase
+                primary_field_name = "DYNAMODB_PRIMARY_#{clean_tablename}"
+                secondary_field_name = "DYNAMODB_SECONDARY_#{clean_tablename}"
                 if primaries.include?(table_name)
                     expect(table).to include('PRIMARY_DYNAMODB_TABLE')
                     expect(table['PRIMARY_DYNAMODB_TABLE']).to be true
-                    expect(table).to_not include('SECONDARY_DYNAMODB_TABLE')
-                elsif secondaries.include?(table_name)
+
+                    expect(redis_client.hexists(env_override, primary_field_name)).to be true
+                    expect(redis_client.hget(env_override, primary_field_name)).to eql(table_name)
+                end
+
+                if secondaries.include?(table_name)
                     expect(table).to include('SECONDARY_DYNAMODB_TABLE')
                     expect(table['SECONDARY_DYNAMODB_TABLE']).to be true
+
+                    expect(redis_client.hexists(env_override, secondary_field_name)).to be true
+                    expect(redis_client.hget(env_override, secondary_field_name)).to eql(table_name)
+                end
+
+                unless primaries.include?(table_name) or secondaries.include?(table_name)
                     expect(table).to_not include('PRIMARY_DYNAMODB_TABLE')
-                else
-                    if table_name.eql?("#{rack_env}.norotation")
-                        expect(table).to include('PRIMARY_DYNAMODB_TABLE')
-                        expect(table['PRIMARY_DYNAMODB_TABLE']).to be true
-                        expect(table).to include('SECONDARY_DYNAMODB_TABLE')
-                        expect(table['SECONDARY_DYNAMODB_TABLE']).to be true
-                    else
-                        expect(table).to_not include('PRIMARY_DYNAMODB_TABLE')
-                        expect(table).to_not include('SECONDARY_DYNAMODB_TABLE')
-                    end
+                    expect(table).to_not include('SECONDARY_DYNAMODB_TABLE')
+
+                    expect(redis_client.hget(env_override, primary_field_name)).to_not eql(table_name)
+                    expect(redis_client.hget(env_override, secondary_field_name)).to_not eql(table_name)
                 end
             end
         end

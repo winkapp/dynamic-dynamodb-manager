@@ -534,24 +534,30 @@ class DynamicDynamoDBManager
     end
 
     def update_redis
+        env_override = 'env_override_hash'
+        primary_field = 'PRIMARY_DYNAMODB_TABLE'
+        secondary_field = 'SECONDARY_DYNAMODB_TABLE'
         redis_client = Redis.new(url: ENV['REDIS_URL'])
         tables = get_all_required_tables(true)
         tables.each do |table|
             table_name = table['TableName']
-            if table.include? 'PRIMARY_DYNAMODB_TABLE' and table['PRIMARY_DYNAMODB_TABLE']
-                unless redis_client.get('PRIMARY_DYNAMODB_TABLE').eql?(table_name)
+            clean_tablename = table_name.split(/\./)[1].gsub(/[^\w]/, '_').upcase
+            if table.include? primary_field and table[primary_field]
+                primary_field_name = "DYNAMODB_PRIMARY_#{clean_tablename}"
+                unless redis_client.hget(env_override, primary_field_name).eql?(table_name)
                     if @verbose
-                        puts "Setting PRIMARY_DYNAMODB_TABLE env var to #{table_name}"
+                        puts "Setting #{primary_field_name} env var override to #{table_name}"
                     end
-                    redis_client.set('PRIMARY_DYNAMODB_TABLE', table_name)
+                    redis_client.hset(env_override, primary_field_name, table_name)
                 end
             end
-            if table.include? 'SECONDARY_DYNAMODB_TABLE' and table['SECONDARY_DYNAMODB_TABLE']
-                unless redis_client.get('SECONDARY_DYNAMODB_TABLE').eql?(table_name)
+            if table.include? secondary_field and table[secondary_field]
+                secondary_field_name = "DYNAMODB_SECONDARY_#{clean_tablename}"
+                unless redis_client.hget(env_override, secondary_field_name).eql?(table_name)
                     if @verbose
-                        puts "Setting SECONDARY_DYNAMODB_TABLE env var to #{table_name}"
+                        puts "Setting #{secondary_field_name} env var override to #{table_name}"
                     end
-                    redis_client.set('SECONDARY_DYNAMODB_TABLE', table_name)
+                    redis_client.hset(env_override, secondary_field_name, table_name)
                 end
             end
         end

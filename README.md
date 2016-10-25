@@ -84,7 +84,8 @@ The source of your json feed. This could either be a local file or a remote file
 If the file can't be read. The application will error out.
 * `REDIS_URL='redis://USER:PASS@HOST:PORT'`  
 The URL of the Redis instance to update with the current and previous DynamoDB Table names.  
-This sets `PRIMARY_DYNAMODB_TABLE` to the current table and `SECONDARY_DYNAMODB_TABLE` to the name of the previous month/week/day table.   
+For each table in the `API_TABLE_RESOURCE` json, the current month/week/day table name will be set as the value for key `DYNAMODB_PRIMARY_XXXX` (in hash: `env_override_hash`) 
+and the previous month/week/day table name will be set as the value for key `DYNAMODB_SECONDARY_XXXX` (*where `XXXX` is the upper-case table name with any non-word characters replaced with `_`'s*)  
 * `BUGSNAG_APIKEY=`  
 The Gem supports BUGSNAG. The only thing you need to do is to add your BUGSNAG key to the environment variables
 and it will help you figure out where it fails and if it fails.

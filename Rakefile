@@ -13,12 +13,16 @@ task :local_dynamo do
     # fake_dynamo is no longer maintained (https://github.com/ananthakumaran/fake_dynamo)
     # Use DynamoDB Local instaed (http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
     # sh("fake_dynamo --port 4567 --db /tmp/#{ENV['USER']}/db.fdb")
-    `java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -port 4567 -inMemory`
+    `/usr/bin/java -Djava.library.path=$HOME/DynamoDB/DynamoDBLocal_lib -jar $HOME/DynamoDB/DynamoDBLocal.jar -port 4567 -inMemory`
+end
+
+task :local_redis do
+    `/usr/local/bin/redis-server`
 end
 
 # Setup the necessary gems, specified in the gemspec.
 begin
-    Bundler.setup(:default, :development)
+    Bundler.setup(:default, :test)
 rescue Bundler::BundlerError => e
     $stderr.puts e.message
     $stderr.puts 'Run `bundle install` to install missing gems'
