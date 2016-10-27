@@ -4,24 +4,41 @@ require 'bundler'
 
 cur_dir = File.dirname(__FILE__)
 require "#{cur_dir}/../lib/dynamic_dynamodb_manager.rb"
-require "#{cur_dir}/../lib/dynamodb_cleanup.rb"
 
 class DynamicDynamoDBCLI < Thor
 
-    desc 'rotate', 'Makes sure all tables exist in DynamoDB and drops those that are no longer required based on the rotation schemes'
+    desc 'rotate', 'Makes sure all tables exist in DynamoDB and (optionally) drops those that are no longer required based on the rotation schemes'
     option :deletion, :type => :boolean, :default => false, :desc => 'Delete old tables (Default: false)'
     option :redis, :type => :boolean, :default => true, :desc => 'Update redis env vars "PRIMARY_DYNAMODB_TABLE" and "SECONDARY_DYNAMODB_TABLE"'
+    option :delay, :type => :integer, :default => 900, :desc => 'Time to wait (in seconds) before updating OutdatedTableProvisionedThroughput capacity (Default: 900 [seconds])'
     option :verbose, :type => :boolean, :default => false, :desc => 'Verbose output (Default: false)'
 
     def rotate(path=nil)
         @manager = DynamicDynamoDBManager.new(verbose: options[:verbose])
         # create all new tables
-        puts 'Creating required tables'
+        puts 'Creating required tables...'
         @manager.create_tables
 
+        # Update Lambda Event Source Mappings
+        puts 'Updating Lambda Event Source Mappings...'
+        @manager.update_lambda_esm
+
+        if options[:redis]
+            # Update redis keys
+            puts 'Updating redis dynamic env...'
+            @manager.update_redis
+        end
+
+        puts "Waiting for #{options[:delay]} seconds before updating OutdatedTableProvisionedThroughput..."
+        sleep options[:delay]
+
         # Update provisioned throughput capacity on tables
-        puts 'Updating tables throughput'
+        puts 'Updating Table Throughput'
         @manager.update_tables
+
+        # Update Lambda Event Source Mappings
+        puts 'Updating Lambda Event Source Mappings'
+        @manager.update_lambda_esm
 
         if options[:deletion]
             # remove all old tables
@@ -32,26 +49,12 @@ class DynamicDynamoDBCLI < Thor
             puts 'Not deleting any table because you told me to skip deletions...'
         end
 
-        if options[:redis]
-            # Update redis keys
-            puts 'Updating redis dynamic env'
-            @manager.update_redis
-        end
-
         # Write Config if a path is provided
         unless path.nil?
             @manager.write_dynamic_dynamodb_config(path)
             puts "wrote the Dynamic DynamoDB config file to #{path}"
         end
     end
-
-    # desc 'cleanup', 'Fetches all the stacks and cleans up all tables that are not part of an existing stack based on the stack environment parameter.'
-    # def cleanup
-    #     # Delete all tables from stacks that are no longer there
-    #     @cleanup = DynamoDbCleanup.new
-    #     @cleanup.get_all_environments
-    #     @cleanup.delete_unknown_tables
-    # end
 end
 
 DynamicDynamoDBCLI.start(ARGV)

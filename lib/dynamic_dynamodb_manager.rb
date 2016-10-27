@@ -37,6 +37,7 @@ class DynamicDynamoDBManager
 
     def initialize(aws_config: nil, verbose: false)
 
+        ENV['AWS_REGION'] ||= 'us-east-1'
         ENV['AWS_ACCESS_KEY'] ||= '00000'
         ENV['AWS_SECRET_ACCESS_KEY'] ||= '00000'
         default_configs = {
@@ -50,7 +51,7 @@ class DynamicDynamoDBManager
             ENV['DYNAMODB_PORT'] ||= '4567'
             ENV['DYNAMODB_USE_SSL'] ||= '0'
             ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
-            ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '5'
+            ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '10'
 
             protocol = 'http'
             if ENV['DYNAMODB_USE_SSL'] == '1'
@@ -76,7 +77,7 @@ class DynamicDynamoDBManager
     end
 
     def get_all_tables(refresh = false, include_other = false)
-        if refresh.equal?(false) and !@dynamodb_tables.nil?
+        if !refresh and !@dynamodb_tables.nil?
             tables = @dynamodb_tables
         else
             tables = []
@@ -96,7 +97,7 @@ class DynamicDynamoDBManager
 
             tables.each do |table|
                 # If it is part of a different environment, do not list it
-                if !(table.include? ENV['RACK_ENV']) and include_other.equal?(false)
+                if !table.start_with?("#{ENV['RACK_ENV']}.") and !include_other
                     tables.delete(table)
                     next
                 end
@@ -108,8 +109,11 @@ class DynamicDynamoDBManager
                         tables.delete(table)
                     end
                 rescue Aws::DynamoDB::Errors::ResourceNotFoundException
-                    # rescuing the ResourceNotFoundException means it might have
-                    # been in a delete state and listed but not present anymore
+                    # ResourceNotFoundException - it might have been in a delete state and listed
+                    # but not present anymore
+                    tables.delete(table)
+                rescue Aws::DynamoDB::Errors::AccessDeniedException
+                    # AccessDeniedException - it is a table that we shouldnt be touching
                     tables.delete(table)
                 end
 
@@ -123,7 +127,11 @@ class DynamicDynamoDBManager
         if @verbose
             puts "Deleting table: #{table_name}"
         end
-        dynamo_client.delete_table({table_name: table_name})
+        if ENV['RACK_ENV'].eql?('test')
+            dynamo_client.delete_table({table_name: table_name})
+        else
+            puts "DRY RUN: Not deleting table: #{table_name}"
+        end
     end
 
     def get_all_required_tables(refresh = false)
@@ -141,7 +149,6 @@ class DynamicDynamoDBManager
                 purge_rotation = table['PurgeRotation'].to_i
                 table_name = table['TableName']
 
-
                 # If purge rotation equals infinite, we still will create at least 4 tables.
                 # We do this to make sure it will create a new table and have at least a couple of
                 # tables so the app can write historical data to it.
@@ -150,14 +157,6 @@ class DynamicDynamoDBManager
                 end
 
                 case rotation_scheme
-                    when 'none'
-                        # syntax
-                        # stack.tablename
-                        temp_table = Marshal.load(Marshal.dump(table))
-                        temp_table['TableName'] = "#{environment}.#{table_name}"
-                        temp_table['PRIMARY_DYNAMODB_TABLE'] = true
-                        temp_table['SECONDARY_DYNAMODB_TABLE'] = true
-                        tables << temp_table
                     when 'daily'
                         # syntax
                         # stack.tablename.20041011
@@ -312,9 +311,8 @@ class DynamicDynamoDBManager
     end
 
     def create_tables
-        unless ENV['RACK_ENV'].eql? 'test'
-            lambda_client = Aws::Lambda::Client.new
-        end
+        # noinspection RubyResolve,RubyArgCount
+        lambda_client = Aws::Lambda::Client.new
 
         tables = @dynamodb_required_tables
         tables.each do |table|
@@ -325,6 +323,9 @@ class DynamicDynamoDBManager
                     puts "#{table_name} already exists.  Not creating..."
                 end
             else
+                if @verbose
+                    puts "Creating #{table_name}..."
+                end
                 attribute_definitions = Array.new
                 table['Properties']['AttributeDefinitions'].each do |ad|
                     attribute = {
@@ -419,27 +420,7 @@ class DynamicDynamoDBManager
                     new_table_params[:stream_specification] = stream_specification
                 end
 
-                if @verbose
-                    puts "Creating #{table_name}..."
-                end
-
                 create_response = dynamo_client.create_table(new_table_params)
-                unless ENV['RACK_ENV'].eql? 'test'
-                    if table.include?('StreamLambda')
-                        func_name = table['StreamLambda']['FunctionName']
-                        stream_arn = create_response.table_description.latest_stream_arn
-                        if @verbose
-                            puts "Adding source mapping to lambda #{func_name} for stream #{stream_arn}..."
-                        end
-                        lambda_client.create_event_source_mapping({
-                            event_source_arn: stream_arn,
-                            function_name: func_name,
-                            enabled: table['StreamLambda']['Enabled'],
-                            batch_size: table['StreamLambda']['BatchSize'],
-                            starting_position: table['StreamLambda']['StartingPosition'],
-                        })
-                    end
-                end
 
                 # Sleep for N seconds so that we give AWS some time to create the table
                 sleep_intv = ENV['DYNAMODB_SLEEP_INTERVAL']
@@ -447,6 +428,69 @@ class DynamicDynamoDBManager
                     puts "Sleeping for #{sleep_intv} seconds for AWS limit purposes."
                 end
                 sleep sleep_intv.to_f
+
+                # Create an event source mapping from the new DynamoDB stream to a lambda function
+                if table.include?('StreamLambda')
+                    # status = dynamo_client.describe_table({:table_name => table_name}).table[:table_status]
+                    # while status != 'ACTIVE'
+                    #     if @verbose
+                    #         puts "Waiting for table to be ACTIVE: #{status}"
+                    #     end
+                    #     sleep 2
+                    #     status = dynamo_client.describe_table({:table_name => table_name}).table[:table_status]
+                    # end
+
+                    func_name = table['StreamLambda']['FunctionName']
+                    stream_arn = create_response.table_description.latest_stream_arn
+                    if @verbose
+                        puts "Adding source mapping to lambda #{func_name} for stream #{stream_arn}..."
+                    end
+                    lambda_client.create_event_source_mapping({
+                        event_source_arn: stream_arn,
+                        function_name: func_name,
+                        enabled: table['StreamLambda']['Enabled'],
+                        batch_size: table['StreamLambda']['BatchSize'],
+                        starting_position: table['StreamLambda']['StartingPosition']
+                    })
+                end
+            end
+
+        end
+    end
+
+    def update_lambda_esm
+        primary_field = 'PRIMARY_DYNAMODB_TABLE'
+        secondary_field = 'SECONDARY_DYNAMODB_TABLE'
+
+        # noinspection RubyResolve,RubyArgCount
+        lambda_client = Aws::Lambda::Client.new
+        all_tables = get_all_tables(true)
+        tables = get_all_required_tables(true)
+        tables.each do |table|
+            table_name = table['TableName']
+            # Do not update tables that do not exist
+            if all_tables.include?(table_name)
+                if table.include?('StreamLambda')
+                    table_info = dynamo_client.describe_table({:table_name => table_name})
+                    stream_arn = table_info.table[:latest_stream_arn]
+                    func_name = table['StreamLambda']['FunctionName']
+
+                    unless table[primary_field] or table[secondary_field]
+
+                        if @verbose
+                            puts "Deleting source mapping of stream #{stream_arn} to lambda: #{func_name}"
+                        end
+                        esms = lambda_client.list_event_source_mappings({
+                            event_source_arn: stream_arn,
+                            function_name: func_name
+                        })
+                        esm_uuid = esms.event_source_mappings[0].uuid
+                        lambda_client.delete_event_source_mapping({
+                            uuid: esm_uuid
+                        })
+
+                    end
+                end
             end
         end
     end
@@ -460,7 +504,6 @@ class DynamicDynamoDBManager
             if all_tables.include?(table_name)
                 table_info = dynamo_client.describe_table({:table_name => table_name})
 
-                # table_scheme = get_table_scheme(table_name)
                 scheme_read_cap = table['Properties']['ProvisionedThroughput']['ReadCapacityUnits']
                 scheme_write_cap = table['Properties']['ProvisionedThroughput']['WriteCapacityUnits']
                 actual_read_cap = table_info.table[:provisioned_throughput][:read_capacity_units]
@@ -542,7 +585,7 @@ class DynamicDynamoDBManager
         tables.each do |table|
             table_name = table['TableName']
             clean_tablename = table_name.split(/\./)[1].gsub(/[^\w]/, '_').upcase
-            if table.include? primary_field and table[primary_field]
+            if table[primary_field]
                 primary_field_name = "DYNAMODB_PRIMARY_#{clean_tablename}"
                 unless redis_client.hget(env_override, primary_field_name).eql?(table_name)
                     if @verbose
@@ -551,7 +594,7 @@ class DynamicDynamoDBManager
                     redis_client.hset(env_override, primary_field_name, table_name)
                 end
             end
-            if table.include? secondary_field and table[secondary_field]
+            if table[secondary_field]
                 secondary_field_name = "DYNAMODB_SECONDARY_#{clean_tablename}"
                 unless redis_client.hget(env_override, secondary_field_name).eql?(table_name)
                     if @verbose
@@ -564,6 +607,9 @@ class DynamicDynamoDBManager
     end
 
     def cleanup_tables
+        rack_env = ENV['RACK_ENV']
+        sleep_intv = ENV['DYNAMODB_SLEEP_INTERVAL']
+
         all_tables = @dynamodb_required_tables
 
         # Get all our expected tables
@@ -580,32 +626,39 @@ class DynamicDynamoDBManager
 
         # Remove all tables that are remaining
         remaining_tables.each do |table_name|
-            # Check if it is part of this environment
-            if table_name.include? ENV['RACK_ENV']
-                # Check if the table name is known
-                if @dynamodb_tables.include?(table_name)
-                    # Check if it has a rotation scheme.
-                    if table_name.include? '.'
-                        clean_tablename = table_name.split(/\./)[1]
-                        table_scheme = get_table_scheme(clean_tablename)
-                        if table_scheme['PurgeRotation'].to_i.equal?(-1)
-                            if @verbose
-                                puts "Not deleting #{table_name}. Rotation was set to infinite."
-                            end
-                            # go to the next table
-                            next
-                        end
-                    end
 
-                    # Not known to us and also no infinite rotation
+            # Check if table name matches our naming convention (environ.name.YearMonthDay)
+            # If this code is still in use past the year 2099 I will be amazed
+            unless table_name.match(/^#{rack_env}\..+\.20\d{2}(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[01])$/).nil?
+
+                # Check if it has a rotation scheme.
+                clean_tablename = table_name.split(/\./)[1]
+                table_scheme = get_table_scheme(clean_tablename)
+
+                if table_scheme == nil
                     if @verbose
-                        puts "Deleting #{table_name}. System will sleep for #{ENV['DYNAMODB_SLEEP_INTERVAL']} seconds for AWS limit purposes."
+                        puts "Not deleting #{table_name}.  Not found in API_TABLE_RESOURCE json."
                     end
-                    delete_table(table_name)
-
-                    # Sleep for N seconds so that we give AWS some time to create the table
-                    sleep ENV['DYNAMODB_SLEEP_INTERVAL'].to_f
+                    # go to the next table
+                    next
+                elsif table_scheme['PurgeRotation'].to_i.equal?(-1)
+                    if @verbose
+                        puts "Not deleting #{table_name}.  Rotation is set to infinite."
+                    end
+                    # go to the next table
+                    next
                 end
+
+                if @verbose
+                    puts "Deleting #{table_name}..."
+                end
+                delete_table(table_name)
+
+                # Sleep for N seconds so that we give AWS some time to create the table
+                if @verbose
+                    puts "Sleeping for #{sleep_intv} seconds for AWS limit purposes."
+                end
+                sleep sleep_intv.to_f
             end
         end
         # Refresh all tables
@@ -627,14 +680,16 @@ class DynamicDynamoDBManager
             raise "JSON file #{ENV['API_TABLE_RESOURCE']} could not properly be read. Please make sure your source is accurate."
         end
 
-        unless table_name.nil?
+        if table_name.nil?
+            # If not specified, return all tables
+            api_tables
+        else
             api_tables.each do |table_definition|
                 if table_definition['TableName'] == table_name
                     return table_definition
                 end
             end
+            nil
         end
-        # If not specified, return all tables
-        api_tables
     end
 end

@@ -77,6 +77,8 @@ DynamoDB port
 AWS Access key to access your DynamoDB instance
 * `AWS_SECRET_ACCESS_KEY='00000'`  
 AWS Secret Access key to access your DynamoDB instance
+* `AWS_REGION=us-east-1`
+AWS Region
 * `DYNAMODB_USE_SSL=0`  
 I'm not entirely sure if this works properly. But it is possible.
 * `API_TABLE_RESOURCE='http://testing.com/v1/system/tables'`  

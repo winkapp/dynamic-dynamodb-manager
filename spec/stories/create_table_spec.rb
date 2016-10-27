@@ -4,6 +4,11 @@ require_relative '../../spec/spec_helper.rb'
 describe DynamicDynamoDBManager do
 
     before do
+        begin
+            @manager.delete_table('some-random-collection-one')
+        rescue Exception
+            # pass
+        end
         @manager = DynamicDynamoDBManager.new
         new_table_params = {
             attribute_definitions: [
