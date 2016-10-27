@@ -10,7 +10,7 @@ class DynamicDynamoDBCLI < Thor
     desc 'rotate', 'Makes sure all tables exist in DynamoDB and (optionally) drops those that are no longer required based on the rotation schemes'
     option :deletion, :type => :boolean, :default => false, :desc => 'Delete old tables (Default: false)'
     option :redis, :type => :boolean, :default => true, :desc => 'Update redis env vars "PRIMARY_DYNAMODB_TABLE" and "SECONDARY_DYNAMODB_TABLE"'
-    option :delay, :type => :integer, :default => 900, :desc => 'Time to wait (in seconds) before updating OutdatedTableProvisionedThroughput capacity (Default: 900 [seconds])'
+    option :delay, :type => :numeric, :default => 900, :desc => 'Time to wait (in seconds) before updating OutdatedTableProvisionedThroughput capacity (Default: 900 [seconds])'
     option :verbose, :type => :boolean, :default => false, :desc => 'Verbose output (Default: false)'
 
     def rotate(path=nil)
@@ -18,10 +18,6 @@ class DynamicDynamoDBCLI < Thor
         # create all new tables
         puts 'Creating required tables...'
         @manager.create_tables
-
-        # Update Lambda Event Source Mappings
-        puts 'Updating Lambda Event Source Mappings...'
-        @manager.update_lambda_esm
 
         if options[:redis]
             # Update redis keys
@@ -36,15 +32,10 @@ class DynamicDynamoDBCLI < Thor
         puts 'Updating Table Throughput'
         @manager.update_tables
 
-        # Update Lambda Event Source Mappings
-        puts 'Updating Lambda Event Source Mappings'
-        @manager.update_lambda_esm
-
         if options[:deletion]
             # remove all old tables
             puts 'Removing tables which are no longer needed according to the rotation scheme'
-            puts 'DRY RUN: Nothing removed!'
-            # @manager.cleanup_tables
+            @manager.cleanup_tables
         else
             puts 'Not deleting any table because you told me to skip deletions...'
         end

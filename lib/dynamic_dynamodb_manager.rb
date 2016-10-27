@@ -124,14 +124,34 @@ class DynamicDynamoDBManager
     end
 
     def delete_table(table_name)
+        table = get_table_scheme(table_name.split(/\./)[1])
+        if !table.nil? and table.include?('StreamLambda')
+            # noinspection RubyResolve,RubyArgCount
+            lambda_client = Aws::Lambda::Client.new
+
+            table_info = dynamo_client.describe_table({:table_name => table_name})
+            stream_arn = table_info.table[:latest_stream_arn]
+            func_name = table['StreamLambda']['FunctionName']
+
+            if @verbose
+                puts "Deleting event source mappings of stream #{stream_arn} to lambda: #{func_name}"
+            end
+            esms = lambda_client.list_event_source_mappings({
+                event_source_arn: stream_arn,
+                function_name: func_name
+            })
+            esms.event_source_mappings.each do |esm|
+                esm_uuid = esm.uuid
+                lambda_client.delete_event_source_mapping({
+                    uuid: esm_uuid
+                })
+            end
+        end
+
         if @verbose
             puts "Deleting table: #{table_name}"
         end
-        if ENV['RACK_ENV'].eql?('test')
-            dynamo_client.delete_table({table_name: table_name})
-        else
-            puts "DRY RUN: Not deleting table: #{table_name}"
-        end
+        dynamo_client.delete_table({table_name: table_name})
     end
 
     def get_all_required_tables(refresh = false)
@@ -431,6 +451,8 @@ class DynamicDynamoDBManager
 
                 # Create an event source mapping from the new DynamoDB stream to a lambda function
                 if table.include?('StreamLambda')
+                    # @todo I dont think this is necessary since event source mappings are part of Lambda not DynamoDB so we shouldnt need to wait until the DB is ready
+                    #
                     # status = dynamo_client.describe_table({:table_name => table_name}).table[:table_status]
                     # while status != 'ACTIVE'
                     #     if @verbose
@@ -455,43 +477,6 @@ class DynamicDynamoDBManager
                 end
             end
 
-        end
-    end
-
-    def update_lambda_esm
-        primary_field = 'PRIMARY_DYNAMODB_TABLE'
-        secondary_field = 'SECONDARY_DYNAMODB_TABLE'
-
-        # noinspection RubyResolve,RubyArgCount
-        lambda_client = Aws::Lambda::Client.new
-        all_tables = get_all_tables(true)
-        tables = get_all_required_tables(true)
-        tables.each do |table|
-            table_name = table['TableName']
-            # Do not update tables that do not exist
-            if all_tables.include?(table_name)
-                if table.include?('StreamLambda')
-                    table_info = dynamo_client.describe_table({:table_name => table_name})
-                    stream_arn = table_info.table[:latest_stream_arn]
-                    func_name = table['StreamLambda']['FunctionName']
-
-                    unless table[primary_field] or table[secondary_field]
-
-                        if @verbose
-                            puts "Deleting source mapping of stream #{stream_arn} to lambda: #{func_name}"
-                        end
-                        esms = lambda_client.list_event_source_mappings({
-                            event_source_arn: stream_arn,
-                            function_name: func_name
-                        })
-                        esm_uuid = esms.event_source_mappings[0].uuid
-                        lambda_client.delete_event_source_mapping({
-                            uuid: esm_uuid
-                        })
-
-                    end
-                end
-            end
         end
     end
 

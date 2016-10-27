@@ -1,8 +1,8 @@
 [
     {
         "TableName" : "activities",
-        "RotationScheme" : "monthly",
-        "PurgeRotation" : 3,
+        "RotationScheme" : "daily",
+        "PurgeRotation" : 2,
         "StreamLambda": {
             "FunctionName": "api_staging_activities_ddb_to_firehose",
             "BatchSize": 500,
@@ -11,10 +11,6 @@
         },
         "Properties" : {
             "AttributeDefinitions" : [
-                {
-                    "AttributeName" : "activity_uuid",
-                    "AttributeType" : "S"
-                },
                 {
                     "AttributeName" : "actor_uuid",
                     "AttributeType" : "S"
@@ -78,7 +74,7 @@
                     },
                     "ProvisionedThroughput": {
                         "ReadCapacityUnits": 4,
-                        "WriteCapacityUnits": 64
+                        "WriteCapacityUnits": 16
                     },
                     "OutdatedTableProvisionedThroughput" : {
                         "ReadCapacityUnits" : 4,
@@ -91,19 +87,19 @@
                 "StreamViewType": "NEW_IMAGE"
             },
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : 128,
-                "WriteCapacityUnits" : 64
+                "ReadCapacityUnits" : 32,
+                "WriteCapacityUnits" : 32
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 64,
+                "ReadCapacityUnits" : 16,
                 "WriteCapacityUnits" : 1
             }
         }
     },
     {
         "TableName" : "readings",
-        "RotationScheme" : "monthly",
-        "PurgeRotation" : 3,
+        "RotationScheme" : "daily",
+        "PurgeRotation" : 2,
         "StreamLambda": {
             "FunctionName": "api_staging_readings_ddb_to_firehose",
             "BatchSize": 500,
@@ -158,11 +154,11 @@
                 "StreamViewType": "NEW_IMAGE"
             },
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : 128,
-                "WriteCapacityUnits" : 128
+                "ReadCapacityUnits" : 32,
+                "WriteCapacityUnits" : 32
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 64,
+                "ReadCapacityUnits" : 16,
                 "WriteCapacityUnits" : 1
             }
         }
