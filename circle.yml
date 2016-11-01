@@ -1,0 +1,14 @@
+machine:
+  services:
+    - docker
+  ruby:
+    version: 2.2.4
+
+deployment:
+  docker:
+    branch: [master, staging, production]
+    commands:
+      - docker login -e $QUAY_EMAIL -u $QUAY_USER -p $QUAY_PASS quay.io
+      - docker build -t quay.io/winkapp/dynamic-dynamodb-manager:$CIRCLE_SHA1 .
+      - docker tag -f quay.io/winkapp/dynamic-dynamodb-manager:$CIRCLE_SHA1 quay.io/winkapp/dynamic-dynamodb-manager:$CIRCLE_BRANCH
+      - docker push quay.io/winkapp/dynamic-dynamodb-manager
