@@ -1,5 +1,5 @@
 
-CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)
+CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)  
 Docker Status: [![Docker Repository on Quay](https://quay.io/repository/winkapp/dynamic-dynamodb-manager/status?token=ca727edd-f884-48dd-aad2-0e822422cf34 "Docker Repository on Quay")](https://quay.io/repository/winkapp/dynamic-dynamodb-manager)
 
 # Dynamic DynamoDB Table Manager
