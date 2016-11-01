@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
 
   s.add_dependency 'aws-sdk', '2.6.11'
-  s.add_dependency 'bundler', '1.13.5'
+  s.add_dependency 'bundler', '1.13.6'
   s.add_dependency 'bugsnag', '5.0.1'
   s.add_dependency 'dotenv', '2.1.1'
   s.add_dependency 'httparty', '0.14.0'

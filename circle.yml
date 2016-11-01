@@ -1,8 +1,19 @@
 machine:
   services:
     - docker
+    - redis
   ruby:
     version: 2.2.4
+
+dependencies:
+  pre:
+    - curl --create-dirs -Lv -o DynamoDBLocal/dynamodb_local_latest.tar.gz http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz
+    - tar -zxvf DynamoDBLocal/dynamodb_local_latest.tar.gz -C DynamoDBLocal
+
+test:
+  pre:
+    - java -Djava.library.path=DynamoDBLocal/DynamoDBLocal_lib -jar DynamoDBLocal/DynamoDBLocal.jar -port 4567 -inMemory:
+        background: true
 
 deployment:
   docker:

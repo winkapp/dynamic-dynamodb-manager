@@ -1,5 +1,5 @@
 
-[![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)
+CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)
 
 
 # Dynamic DynamoDB Table Manager
