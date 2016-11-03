@@ -108,6 +108,7 @@ bundle exec dynamic-dynamodb-manager-cli
 
 ## Running tests
 * Start up a [Local DynamoDB](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
+* Start a local `redis-server`
 * `bundle exec rspec spec/`
 
 
