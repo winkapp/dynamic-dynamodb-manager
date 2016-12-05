@@ -1,7 +1,7 @@
 [
     {
         "TableName" : "activities",
-        "RotationScheme" : "daily",
+        "RotationScheme" : "monthly",
         "PurgeRotation" : 2,
         "StreamLambda": {
             "FunctionName": "api_staging_activities_ddb_to_firehose",
@@ -98,7 +98,7 @@
     },
     {
         "TableName" : "readings",
-        "RotationScheme" : "daily",
+        "RotationScheme" : "monthly",
         "PurgeRotation" : 2,
         "StreamLambda": {
             "FunctionName": "api_staging_readings_ddb_to_firehose",

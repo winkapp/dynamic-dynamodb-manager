@@ -35,7 +35,7 @@ class DynamicDynamoDBManager
     attr_accessor :dynamodb_tables
     attr_accessor :verbose
 
-    def initialize(aws_config: nil, verbose: false)
+    def initialize(aws_config: nil, verbose: true)
 
         ENV['AWS_REGION'] ||= 'us-east-1'
         ENV['AWS_ACCESS_KEY'] ||= '00000'
@@ -59,6 +59,8 @@ class DynamicDynamoDBManager
             end
             endpoint = "#{protocol}://#{ENV['DYNAMODB_ENDPOINT']}:#{ENV['DYNAMODB_PORT']}"
             default_configs.update({:endpoint => endpoint})
+        else
+            ENV['DYNAMODB_SLEEP_INTERVAL'] ||= '5'
         end
 
         if aws_config.nil? || aws_config.empty?

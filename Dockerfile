@@ -11,4 +11,4 @@ RUN gem build dynamic-dynamodb-manager.gemspec && gem install dynamic-dynamodb-m
 
 ENTRYPOINT ["/bin/bash"]
 
-CMD ["/dynamic-dynamodb-manager/bin/dynamic-dynamodb-manager-cli", "rotate", "--deletion", "--redis", "--verbose"]
+CMD ["/dynamic-dynamodb-manager/bin/dynamic-dynamodb-manager-cli", "rotate", "--redis", "--verbose"]
