@@ -6,13 +6,14 @@ machine:
     version: 2.2.4
 
 dependencies:
+  cache_directories:
+    - ../nvm/v0.10.33
   pre:
-    - curl --create-dirs -Lv -o DynamoDBLocal/dynamodb_local_latest.tar.gz http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz
-    - tar -zxvf DynamoDBLocal/dynamodb_local_latest.tar.gz -C DynamoDBLocal
+    - if [[ ! -e ../nvm/v0.10.33/bin/dynalite ]]; then npm install -g dynalite@0.11.3; fi
 
 test:
   pre:
-    - java -Djava.library.path=DynamoDBLocal/DynamoDBLocal_lib -jar DynamoDBLocal/DynamoDBLocal.jar -port 4567:
+    - dynalite --createTableMs 0 --updateTableMs 0 --deleteTableMs 0 --path . --port 4567:
         background: true
 
 deployment:
