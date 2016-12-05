@@ -11,7 +11,7 @@ class DynamicDynamoDBCLI < Thor
     option :deletion, :type => :boolean, :default => false, :desc => 'Delete old tables (Default: false)'
     option :redis, :type => :boolean, :default => true, :desc => 'Update redis env vars "PRIMARY_DYNAMODB_TABLE" and "SECONDARY_DYNAMODB_TABLE"'
     option :delay, :type => :numeric, :default => 900, :desc => 'Time to wait (in seconds) before updating OutdatedTableProvisionedThroughput capacity (Default: 900 [seconds])'
-    option :verbose, :type => :boolean, :default => false, :desc => 'Verbose output (Default: false)'
+    option :verbose, :type => :boolean, :default => true, :desc => 'Verbose output (Default: false)'
 
     def rotate(path=nil)
         @manager = DynamicDynamoDBManager.new(verbose: options[:verbose])
