@@ -81,7 +81,7 @@
                         "WriteCapacityUnits": 8192
                     },
                     "OutdatedTableProvisionedThroughput" : {
-                        "ReadCapacityUnits" : 8192,
+                        "ReadCapacityUnits" : 16384,
                         "WriteCapacityUnits" : 5
                     }
                 }
@@ -95,7 +95,7 @@
                 "WriteCapacityUnits" : 8192
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 2048,
+                "ReadCapacityUnits" : 4096,
                 "WriteCapacityUnits" : 5
             }
         }
@@ -162,7 +162,7 @@
                 "WriteCapacityUnits" : 24576
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 3000,
+                "ReadCapacityUnits" : 6144,
                 "WriteCapacityUnits" : 5
             }
         }
