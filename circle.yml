@@ -12,7 +12,7 @@ dependencies:
 
 test:
   pre:
-    - java -Djava.library.path=DynamoDBLocal/DynamoDBLocal_lib -jar DynamoDBLocal/DynamoDBLocal.jar -port 4567 -inMemory:
+    - java -Djava.library.path=DynamoDBLocal/DynamoDBLocal_lib -jar DynamoDBLocal/DynamoDBLocal.jar -port 4567:
         background: true
 
 deployment:
