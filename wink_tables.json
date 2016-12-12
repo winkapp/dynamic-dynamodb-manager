@@ -12,10 +12,6 @@
         "Properties" : {
             "AttributeDefinitions" : [
                 {
-                    "AttributeName" : "activity_uuid",
-                    "AttributeType" : "S"
-                },
-                {
                     "AttributeName" : "actor_uuid",
                     "AttributeType" : "S"
                 },
