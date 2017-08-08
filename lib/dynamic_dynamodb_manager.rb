@@ -238,12 +238,12 @@ class DynamicDynamoDBManager
               unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m%d')
                 if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
                   temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
-                  end
+                end
                 if temp_table['Properties'].include?('GlobalSecondaryIndexes')
                   temp_table['Properties']['GlobalSecondaryIndexes'].each do |gsi|
                     if gsi.include?('OutdatedTableProvisionedThroughput')
                       gsi['ProvisionedThroughput'] = gsi['OutdatedTableProvisionedThroughput']
-                        end
+                    end
                   end
                 end
               end
@@ -281,19 +281,19 @@ class DynamicDynamoDBManager
                 # Previous Month
                 # Set redis env var for SECONDARY_DYNAMODB_TABLE to temp_table['TableName']
                 temp_table['SECONDARY_DYNAMODB_TABLE'] = true
-                end
+              end
               unless tomorrow.strftime('%Y%m%d').eql? table_prefix.strftime('%Y%m01')
                 # if Throughput limitations are given, the first month gets the ProvisionedThroughput and the day before
                 # the next month is active, it will also receive the ProvisionedThroughput.
                 # everything else gets the OutdatedTableProvisionedThroughput
                 if temp_table['Properties'].include?('OutdatedTableProvisionedThroughput')
                   temp_table['Properties']['ProvisionedThroughput'] = temp_table['Properties']['OutdatedTableProvisionedThroughput']
-                  end
+                end
                 if temp_table['Properties'].include?('GlobalSecondaryIndexes')
                   temp_table['Properties']['GlobalSecondaryIndexes'].each do |gsi|
                     if gsi.include?('OutdatedTableProvisionedThroughput')
                       gsi['ProvisionedThroughput'] = gsi['OutdatedTableProvisionedThroughput']
-                        end
+                    end
                   end
                 end
               end

@@ -30,7 +30,7 @@ Without these environment variables, it will not be able to create your tables a
 git clone https://github.com/winkapp/dynamic-dynamodb-manager.git
 cd dynamic-dynamodb-manager
 gem build dynamic-dynamodb-manager.gemspec
-gem install dynamic-dynamodb-manager-0.0.1.gem
+gem install dynamic-dynamodb-manager-0.0.2.gem
 ```
 
 ```

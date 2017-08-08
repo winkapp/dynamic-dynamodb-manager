@@ -7,7 +7,7 @@ COPY dynamic-dynamodb-manager.gemspec Gemfile Gemfile.lock wink_tables.json /dyn
 
 WORKDIR /dynamic-dynamodb-manager
 
-RUN gem build dynamic-dynamodb-manager.gemspec && gem install dynamic-dynamodb-manager-0.0.1.gem
+RUN gem build dynamic-dynamodb-manager.gemspec && gem install dynamic-dynamodb-manager-0.0.2.gem
 
 ENTRYPOINT ["/bin/bash"]
 
