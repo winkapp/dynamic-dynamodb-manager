@@ -1,5 +1,6 @@
 
-CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)  
+CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)
+
 Docker Status: [![Docker Repository on Quay](https://quay.io/repository/winkapp/dynamic-dynamodb-manager/status?token=ca727edd-f884-48dd-aad2-0e822422cf34 "Docker Repository on Quay")](https://quay.io/repository/winkapp/dynamic-dynamodb-manager)
 
 # Dynamic DynamoDB Table Manager
@@ -20,7 +21,6 @@ In each environment you are running this GEM you will need the following environ
     AWS_SECRET_ACCESS_KEY='00000'
     DYNAMODB_USE_SSL=0
     API_TABLE_RESOURCE='spec/support/fixtures/tables.json'
-    BUGSNAG_APIKEY=
 
 Without these environment variables, it will not be able to create your tables as the API_TABLE_RESOURCE does not exist in real life. It only exists in the testing world
 
