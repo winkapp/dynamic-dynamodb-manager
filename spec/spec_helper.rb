@@ -19,10 +19,9 @@ WebMock.disable_net_connect!(allow_localhost: true)
 # Setup bundler with those options
 Bundler.setup(:default, :test)
 
-# Include Rack::Test::Methods
 include Rack::Test::Methods
 
-ENV['API_TABLE_RESOURCE'] ||= 'http://testing.com/v1/system/tables'
+ENV['API_TABLE_RESOURCE'] ||= 'http://localhost/v1/system/tables'
 
 # spec/spec_helper.rb
 RSpec.configure do |config|

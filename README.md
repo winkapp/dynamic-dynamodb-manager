@@ -1,5 +1,6 @@
 
-CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)  
+CircleCI Status: [![CircleCI](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master.svg?style=svg)](https://circleci.com/gh/winkapp/dynamic-dynamodb-manager/tree/master)
+
 Docker Status: [![Docker Repository on Quay](https://quay.io/repository/winkapp/dynamic-dynamodb-manager/status?token=ca727edd-f884-48dd-aad2-0e822422cf34 "Docker Repository on Quay")](https://quay.io/repository/winkapp/dynamic-dynamodb-manager)
 
 # Dynamic DynamoDB Table Manager
@@ -20,7 +21,6 @@ In each environment you are running this GEM you will need the following environ
     AWS_SECRET_ACCESS_KEY='00000'
     DYNAMODB_USE_SSL=0
     API_TABLE_RESOURCE='spec/support/fixtures/tables.json'
-    BUGSNAG_APIKEY=
 
 Without these environment variables, it will not be able to create your tables as the API_TABLE_RESOURCE does not exist in real life. It only exists in the testing world
 
@@ -30,7 +30,7 @@ Without these environment variables, it will not be able to create your tables a
 git clone https://github.com/winkapp/dynamic-dynamodb-manager.git
 cd dynamic-dynamodb-manager
 gem build dynamic-dynamodb-manager.gemspec
-gem install dynamic-dynamodb-manager-0.0.1.gem
+gem install dynamic-dynamodb-manager-0.0.2.gem
 ```
 
 ```
@@ -108,6 +108,7 @@ bundle exec dynamic-dynamodb-manager-cli
 
 ## Running tests
 * Start up a [Local DynamoDB](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html)
+* Start a local `redis-server`
 * `bundle exec rspec spec/`
 
 
