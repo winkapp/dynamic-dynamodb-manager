@@ -73,11 +73,11 @@
                         "ProjectionType": "ALL"
                     },
                     "ProvisionedThroughput": {
-                        "ReadCapacityUnits": 16384,
-                        "WriteCapacityUnits": 8192
+                        "ReadCapacityUnits": 6144,
+                        "WriteCapacityUnits": 9192
                     },
                     "OutdatedTableProvisionedThroughput" : {
-                        "ReadCapacityUnits" : 16384,
+                        "ReadCapacityUnits" : 6144,
                         "WriteCapacityUnits" : 5
                     }
                 }
@@ -87,11 +87,11 @@
                 "StreamViewType": "NEW_IMAGE"
             },
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : 4096,
-                "WriteCapacityUnits" : 8192
+                "ReadCapacityUnits" : 1024,
+                "WriteCapacityUnits" : 9192
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 4096,
+                "ReadCapacityUnits" : 1024,
                 "WriteCapacityUnits" : 5
             }
         }

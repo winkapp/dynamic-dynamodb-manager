@@ -8,7 +8,7 @@ require "#{cur_dir}/../lib/dynamic_dynamodb_manager.rb"
 class DynamicDynamoDBCLI < Thor
   desc 'rotate', 'Makes sure all tables exist in DynamoDB and (optionally) drops those that are no longer required based on the rotation schemes'
   option :deletion, type: :boolean, default: false, desc: 'Delete old tables (Default: false)'
-  option :redis, type: :boolean, default: true, desc: 'Update redis env vars "PRIMARY_DYNAMODB_TABLE" and "SECONDARY_DYNAMODB_TABLE"'
+  option :redis, type: :boolean, default: false, desc: 'Update redis env vars "PRIMARY_DYNAMODB_TABLE" and "SECONDARY_DYNAMODB_TABLE"'
   option :delay, type: :numeric, default: 900, desc: 'Time to wait (in seconds) before updating OutdatedTableProvisionedThroughput capacity (Default: 900 [seconds])'
   option :verbose, type: :boolean, default: true, desc: 'Verbose output (Default: false)'
 
