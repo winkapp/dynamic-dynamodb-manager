@@ -4,8 +4,8 @@
         "RotationScheme" : "monthly",
         "PurgeRotation" : 2,
         "StreamLambda": {
-            "FunctionName": "api_staging_activities_ddb_to_firehose",
-            "BatchSize": 500,
+            "FunctionName": "api_production_activities_ddb_to_firehose",
+            "BatchSize": 10000,
             "StartingPosition": "TRIM_HORIZON",
             "Enabled": true
         },
@@ -73,12 +73,12 @@
                         "ProjectionType": "ALL"
                     },
                     "ProvisionedThroughput": {
-                        "ReadCapacityUnits": 8,
-                        "WriteCapacityUnits": 32
+                        "ReadCapacityUnits": 16384,
+                        "WriteCapacityUnits": 8192
                     },
                     "OutdatedTableProvisionedThroughput" : {
-                        "ReadCapacityUnits" : 4,
-                        "WriteCapacityUnits" : 1
+                        "ReadCapacityUnits" : 16384,
+                        "WriteCapacityUnits" : 5
                     }
                 }
             ],
@@ -87,12 +87,12 @@
                 "StreamViewType": "NEW_IMAGE"
             },
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : 32,
-                "WriteCapacityUnits" : 64
+                "ReadCapacityUnits" : 4096,
+                "WriteCapacityUnits" : 8192
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 16,
-                "WriteCapacityUnits" : 1
+                "ReadCapacityUnits" : 4096,
+                "WriteCapacityUnits" : 5
             }
         }
     },
@@ -101,8 +101,8 @@
         "RotationScheme" : "monthly",
         "PurgeRotation" : 2,
         "StreamLambda": {
-            "FunctionName": "api_staging_readings_ddb_to_firehose",
-            "BatchSize": 500,
+            "FunctionName": "api_production_readings_ddb_to_firehose",
+            "BatchSize": 10000,
             "StartingPosition": "TRIM_HORIZON",
             "Enabled": true
         },
@@ -154,12 +154,12 @@
                 "StreamViewType": "NEW_IMAGE"
             },
             "ProvisionedThroughput" : {
-                "ReadCapacityUnits" : 32,
-                "WriteCapacityUnits" : 64
+                "ReadCapacityUnits" : 6144,
+                "WriteCapacityUnits" : 24576
             },
             "OutdatedTableProvisionedThroughput" : {
-                "ReadCapacityUnits" : 16,
-                "WriteCapacityUnits" : 1
+                "ReadCapacityUnits" : 6144,
+                "WriteCapacityUnits" : 5
             }
         }
     }
